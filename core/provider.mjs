@@ -1,26 +1,22 @@
-// Generic OpenAI-compatible chat client. Provider comes from the merged config
-// (defaults/config.json.provider, overridable by user config + env).
-// Works with any OpenAI-compatible endpoint: Gemini (v1beta/openai), OpenAI, OpenRouter, local, etc.
+// Generic OpenAI-compatible chat client. Provider from merged config.
 import { execFileSync } from 'node:child_process';
 import { loadConfig } from './config.mjs';
 
 function providerCfg() { return loadConfig().provider || {}; }
-
 let _key, _keyResolved = false;
 function getKey(P) {
   if (_keyResolved) return _key; _keyResolved = true;
-  if (process.env.CC_LLM_KEY) return (_key = process.env.CC_LLM_KEY);
+  if (process.env.CCR_KEY) return (_key = process.env.CCR_KEY);
   if (P.apiKey) return (_key = P.apiKey);
   if (P.apiKeyEnv && process.env[P.apiKeyEnv]) return (_key = process.env[P.apiKeyEnv]);
   if (P.apiKeyKeychain) { try { _key = execFileSync('security', ['find-generic-password','-s',P.apiKeyKeychain,'-w'], {encoding:'utf8'}).trim(); } catch { _key = null; } }
   return _key;
 }
-
 export async function* streamChat(messages, { model, signal, temperature, reasoningEffort } = {}) {
   const P = providerCfg();
-  const base = (process.env.CC_LLM_BASE || P.baseUrl || '').replace(/\/+$/, '');
+  const base = (process.env.CCR_BASE || P.baseUrl || '').replace(/\/+$/, '');
   if (!base) throw new Error('provider.baseUrl not set');
-  const useModel = model || process.env.CC_LLM_MODEL || P.model;
+  const useModel = model || process.env.CCR_MODEL || P.model;
   const effort = reasoningEffort ?? P.reasoningEffort;
   const key = getKey(P);
   const headers = { 'Content-Type': 'application/json', ...(P.headers || {}) };

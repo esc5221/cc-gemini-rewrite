@@ -1,0 +1,6 @@
+{
+  "name": "cc-gemini-rewrite",
+  "version": "0.1.0",
+  "description": "Re-explain hard Claude Code answers inline via the official MessageDisplay hook. The transcript and Claude's context keep the original.",
+  "license": "MIT"
+}

@@ -1,48 +1,35 @@
-// Effective config = merge of, lowest→highest precedence:
-//   package defaults  <  handler prompts  <  user config  <  user prompts  <  runtime state  <  env
+// Merged config: defaults/config.json < ~/.claude/cc-gemini-rewrite/config.json
+//   < state.json (runtime toggles) < env (CCR_*). Prompts from prompts/rewrite-ko.json.
 import { readFileSync } from 'node:fs';
-import { resolve, isAbsolute } from 'node:path';
-import { P, PKG, HOME } from './paths.mjs';
+import { P } from './paths.mjs';
 
 const readJson = (p) => { try { return JSON.parse(readFileSync(p, 'utf8')); } catch { return {}; } };
-const merge = (a, b) => { const o = { ...a }; for (const k in b) o[k] = (b[k] && typeof b[k] === 'object' && !Array.isArray(b[k])) ? merge(a[k] || {}, b[k]) : b[k]; return o; };
-
-// Resolve a handler module path: user handlers dir first, then package-relative, then absolute.
-export function resolveHandlerPath(rel) {
-  if (!rel) return null;
-  if (isAbsolute(rel)) return rel;
-  const userP = resolve(HOME, rel.startsWith('handlers/') ? rel : `handlers/${rel}`);
-  try { readFileSync(userP); return userP; } catch {}
-  return resolve(PKG, rel);
+function deepMerge(a, b) {
+  const o = { ...a };
+  for (const k of Object.keys(b || {})) {
+    o[k] = (b[k] && typeof b[k] === 'object' && !Array.isArray(b[k])) ? deepMerge(a?.[k] || {}, b[k]) : b[k];
+  }
+  return o;
 }
 
 export function loadConfig() {
-  const defaults = readJson(P.defaults);
-  // handler prompts (from the selected handler's dir, package side)
-  const handlerRel = defaults.handler?.module || '';
-  const handlerDir = handlerRel ? resolve(PKG, handlerRel, '..') : null;
-  const handlerPrompts = handlerDir ? readJson(resolve(handlerDir, 'prompts.json')) : {};
+  let cfg = deepMerge(readJson(P.defaults), readJson(P.config));
+  const st = readJson(P.state);
+  if (st.policy) cfg.policy = { ...cfg.policy, name: st.policy };
+  if (st.mode) cfg.mode = st.mode;
+  if (typeof st.enabled === 'boolean') cfg.enabled = st.enabled;
+  if (st.override) cfg = deepMerge(cfg, st.override);
 
-  let cfg = { ...defaults, prompts: { ...handlerPrompts } };
-  cfg = merge(cfg, readJson(P.userConfig));
-  cfg.prompts = merge(cfg.prompts, readJson(P.userPrompts));
+  const pr = cfg.provider || (cfg.provider = {});
+  if (process.env.CCR_BASE) pr.baseUrl = process.env.CCR_BASE;
+  if (process.env.CCR_MODEL) pr.model = process.env.CCR_MODEL;
+  if (process.env.CCR_KEY) pr.apiKey = process.env.CCR_KEY;
+  if (process.env.CCR_KEY_ENV) pr.apiKeyEnv = process.env.CCR_KEY_ENV;
+  if (process.env.CCR_KEY_KEYCHAIN) pr.apiKeyKeychain = process.env.CCR_KEY_KEYCHAIN;
+  if (process.env.CCR_POLICY) cfg.policy = { ...cfg.policy, name: process.env.CCR_POLICY };
+  if (process.env.CCR_MODE) cfg.mode = process.env.CCR_MODE;
+  if (process.env.CCR_ENABLED) cfg.enabled = process.env.CCR_ENABLED !== '0';
 
-  // runtime state: { policy: <name>, override: {...} }
-  const state = readJson(P.state);
-  if (state.policy) cfg.policy = { ...cfg.policy, name: state.policy };
-  if (state.override) {
-    // override may touch provider.model, policy thresholds, or prompts (flat keys from dashboard)
-    const ov = state.override;
-    if (ov.model) cfg.provider = { ...cfg.provider, model: ov.model };
-    for (const k of ['alwaysLines','judgeMinLines']) if (ov[k] != null && ov[k] !== '') cfg.policy = { ...cfg.policy, [k]: Number(ov[k]) };
-    for (const k of ['judgePrompt','respondPrompt','header','maxTurns']) if (ov[k]) cfg.prompts = { ...cfg.prompts, [k]: ov[k] };
-  }
-
-  // env overrides
-  if (process.env.CC_LLM_BASE)  cfg.provider = { ...cfg.provider, baseUrl: process.env.CC_LLM_BASE };
-  if (process.env.CC_LLM_MODEL) cfg.provider = { ...cfg.provider, model: process.env.CC_LLM_MODEL };
-  if (process.env.CC_POLICY)    cfg.policy   = { ...cfg.policy, name: process.env.CC_POLICY };
-  if (process.env.CC_PORT)      cfg.port     = Number(process.env.CC_PORT);
-
+  cfg.prompts = readJson(P.prompts);
   return cfg;
 }

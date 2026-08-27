@@ -1,23 +1,10 @@
 {
-  "name": "cc-turn-ext",
+  "name": "cc-gemini-rewrite",
   "version": "0.1.0",
-  "description": "Turn-end hook engine for Claude Code — patches the CLI to render extra content inline at the end of a turn. Ships with gemini-rewrite: re-explain a hard answer clearly, right in the TUI.",
-  "bin": {
-    "ccturn": "bin/ccturn"
-  },
+  "description": "Re-explain hard Claude Code answers inline via the official MessageDisplay hook — the transcript and Claude's context keep the original.",
   "type": "module",
-  "engines": {
-    "node": ">=18"
-  },
-  "os": [
-    "darwin"
-  ],
-  "keywords": [
-    "claude-code",
-    "cli",
-    "llm",
-    "gemini",
-    "binary-patch"
-  ],
+  "engines": { "node": ">=18" },
+  "os": ["darwin", "linux"],
+  "keywords": ["claude-code", "plugin", "messagedisplay", "hook", "llm", "gemini", "rewrite"],
   "license": "MIT"
 }
