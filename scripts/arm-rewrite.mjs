@@ -3,4 +3,4 @@
 import { armRequest } from '../core/requests.mjs';
 const note = process.argv.slice(2).join(' ').trim();
 armRequest(process.cwd(), note);
-process.stdout.write('armed');
+// silent: no stdout (keeps the /rewrite carrier turn clean)
