@@ -2,18 +2,19 @@
 
 # cc-gemini-rewrite
 
-When a Claude Code answer is hard to follow, **the moment the turn ends an LLM rewrites the same content so you actually get it, and streams it straight into Claude Code's own screen.** The conversation loop, transcript, and API history are left untouched.
+Claude Code's technical answers are often hard to read — the point buried under hedging and buzzwords. **cc-gemini-rewrite catches the end of every turn and has an LLM rewrite that same answer into something you can actually use**, streamed straight into Claude Code's own screen. The conversation loop, transcript, and API history stay untouched.
 
 ```
-you:    why is this slow? what's the cause?
-Claude: several layers are intertwined and it can vary by situation, caching may
-        be involved so behavior differs case by case. many factors combine, so
-        it's hard to say definitively. …
+you:    why is my SQL query slow?
+Claude: Great question! It's likely slow due to suboptimal performance at the data
+        layer — consider indexing, query optimization, and a caching strategy. By
+        following these industry-standard optimizations you should see meaningful
+        improvements in throughput and latency! 🚀
 
-        [cc-turn-ext] re-explained by Gemini        ← appended automatically at turn end
-        The cause is a cache miss. Requests bypass the cache and fall all the way
-        through to the lower layers, which is what makes it slow.
-        Check: cache hit rate first. Next: per-layer latency logs to pin the bottleneck.
+        [re-explained by Gemini]        ← appended automatically at turn end
+        Your query is slow because the DB reads unindexed data off disk, the planner
+        picks a bad execution plan, or repeat reads aren't served from cache.
+        Next: run EXPLAIN to see the plan and pin the exact bottleneck.
 ```
 
 **`/rewrite` — trigger a re-explanation inline, right where you are:**
