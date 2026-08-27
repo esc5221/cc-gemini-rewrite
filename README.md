@@ -107,6 +107,8 @@ stop hook → LLM writes an explanation → that text is fed back to the Claude 
 
 Instead, the tool hooks the binary where a turn ends and streams directly into Claude Code’s screen. The rewrite never enters the transcript or next request.
 
+![What you see on screen — an add-on (skill or stop hook) buries the rewrite in a tool result and the model repeats it (3 calls); the binary patch streams it straight to the screen (2 calls)](docs/render-comparison.en.png)
+
 ## How it works
 
 ```
