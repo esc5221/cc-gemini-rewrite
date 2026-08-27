@@ -1,0 +1,27 @@
+{
+  "handler": {
+    "kind": "module",
+    "module": "handlers/gemini-rewrite/handler.mjs",
+    "command": "",
+    "url": ""
+  },
+  "provider": {
+    "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai",
+    "model": "gemini-2.5-flash",
+    "apiKey": "",
+    "apiKeyEnv": "GEMINI_API_KEY",
+    "apiKeyKeychain": "",
+    "headers": {},
+    "reasoningEffort": "low"
+  },
+  "policy": {
+    "name": "off",
+    "alwaysLines": 15,
+    "judgeMinLines": 5
+  },
+  "port": 61237,
+  "timeoutMs": 120000,
+  "manual": {
+    "minChars": 200
+  }
+}

@@ -1,0 +1,12 @@
+# demo video — uploaded to GitHub CDN (user-attachments), not committed
+docs/demo.mp4
+
+# runtime / user layer (never in repo)
+.cc-turn-ext/
+*.log
+
+# os / editor
+.DS_Store
+
+# deps (none currently, but guard)
+node_modules/

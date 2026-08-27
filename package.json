@@ -1,0 +1,23 @@
+{
+  "name": "cc-turn-ext",
+  "version": "0.1.0",
+  "description": "Turn-end hook engine for Claude Code — patches the CLI to render extra content inline at the end of a turn. Ships with gemini-rewrite: re-explain a hard answer clearly, right in the TUI.",
+  "bin": {
+    "ccturn": "bin/ccturn"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "os": [
+    "darwin"
+  ],
+  "keywords": [
+    "claude-code",
+    "cli",
+    "llm",
+    "gemini",
+    "binary-patch"
+  ],
+  "license": "MIT"
+}
