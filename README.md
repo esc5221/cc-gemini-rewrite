@@ -87,8 +87,8 @@ Deciding (policy) and rewriting (rewriter) are separate. The policy is one of fi
 macOS arm64 + [bun](https://bun.sh) + [Node](https://nodejs.org).
 
 ```bash
-git clone <repo> ~/claude-work/cc-turn-ext
-cd ~/claude-work/cc-turn-ext
+git clone https://github.com/esc5221/cc-gemini-rewrite ~/cc-gemini-rewrite
+cd ~/cc-gemini-rewrite
 ./bin/ccturn setup            # wizard: provider + key check + policy + patch
 ln -s "$PWD/bin/ccturn" ~/.local/bin/ccturn   # optional: put ccturn on PATH
 ```

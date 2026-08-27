@@ -84,8 +84,8 @@ stop 훅 → LLM이 설명 생성 → 그 텍스트를 Claude 모델에 다시 �
 macOS arm64 + [bun](https://bun.sh) + [Node](https://nodejs.org).
 
 ```bash
-git clone <repo> ~/claude-work/cc-turn-ext
-cd ~/claude-work/cc-turn-ext
+git clone https://github.com/esc5221/cc-gemini-rewrite ~/cc-gemini-rewrite
+cd ~/cc-gemini-rewrite
 ./bin/ccturn setup            # 위자드: provider + 키 검증 + policy + 패치
 ln -s "$PWD/bin/ccturn" ~/.local/bin/ccturn   # 선택: ccturn을 PATH에
 ```
