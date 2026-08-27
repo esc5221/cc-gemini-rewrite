@@ -16,16 +16,14 @@ Claude: 여러 레이어가 얽혀서 상황에 따라 다를 수 있고, 캐시
 
 **`/rewrite` — 지금 있는 자리에서 바로 재설명을 띄운다:**
 
-<a href="docs/demo.gif"><img src="docs/demo-poster.png" alt="cc-turn-ext — slop 답변을 Gemini가 깔끔하게 재설명, Claude Code 안에서" width="820"></a>
+<a href="https://github.com/user-attachments/assets/5cf2a29c-c08a-4184-a771-2b9e0256774f"><img src="docs/demo-poster.png" alt="cc-turn-ext — slop 답변을 Gemini가 깔끔하게 재설명, Claude Code 안에서" width="820"></a>
 
-▶ **[데모 재생](docs/demo.gif)** — 20초: 일부러 slop하게 쓴 답변을, Gemini가 Claude Code 안에서 바로 깔끔하게 재설명.
+▶ **[데모 재생](https://github.com/user-attachments/assets/5cf2a29c-c08a-4184-a771-2b9e0256774f)** — 20초: 일부러 slop하게 쓴 답변을, Gemini가 Claude Code 안에서 바로 깔끔하게 재설명.
 
-<!-- 위 포스터는 데모의 마지막 프레임. 클릭하면 애니메이션 GIF가 열린다.
-     더 선명한 인라인 영상 플레이어를 원하면: docs/demo.mp4(gitignore됨)를 GitHub
-     이슈/PR 코멘트나 Release에 드래그 업로드 → 생성된
-     https://github.com/user-attachments/assets/... URL 복사 → 위 두 href를 그 URL로 바꾸거나,
-     이 블록 전체를 다음으로 교체:  <video src="THAT_URL" controls muted></video>
-     그러면 MP4는 GitHub CDN에서 스트리밍되고 레포엔 안 들어간다. -->
+<!-- 위 포스터는 데모의 마지막 프레임. 클릭하면 MP4가 재생된다(GitHub CDN 호스팅, 레포엔 없음).
+     docs/demo.gif는 커밋된 폴백.
+     인라인 플레이어를 원하면 <a>…</a> 블록을 다음으로 교체:
+       <video src="https://github.com/user-attachments/assets/5cf2a29c-c08a-4184-a771-2b9e0256774f" controls muted></video> -->
 
 **cc-turn-ext**(Claude Code turn-end 훅 엔진) 위에 얹은 대표앱. rewrite는 기본 핸들러이고, 원하는 걸 얹을 수 있다.
 

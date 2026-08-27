@@ -18,17 +18,14 @@ Claude: several layers are intertwined and it can vary by situation, caching may
 
 **`/rewrite` — trigger a re-explanation inline, right where you are:**
 
-<a href="docs/demo.gif"><img src="docs/demo-poster.png" alt="cc-turn-ext — a sloppy answer re-explained cleanly by Gemini, inside Claude Code" width="820"></a>
+<a href="https://github.com/user-attachments/assets/5cf2a29c-c08a-4184-a771-2b9e0256774f"><img src="docs/demo-poster.png" alt="cc-turn-ext — a sloppy answer re-explained cleanly by Gemini, inside Claude Code" width="820"></a>
 
-▶ **[Play the demo](docs/demo.gif)** — 20s: a deliberately sloppy answer, re-explained clean by Gemini, right inside Claude Code.
+▶ **[Play the demo](https://github.com/user-attachments/assets/5cf2a29c-c08a-4184-a771-2b9e0256774f)** — 20s: a deliberately sloppy answer, re-explained clean by Gemini, right inside Claude Code.
 
-<!-- The poster above is the demo's final frame. Clicking it opens the animated GIF.
-     For a sharper INLINE video player: upload docs/demo.mp4 (gitignored) to any GitHub
-     issue/PR comment or a Release, copy the resulting
-     https://github.com/user-attachments/assets/... URL, then either
-       - point both hrefs above to that URL, or
-       - replace this whole block with a bare:  <video src="THAT_URL" controls muted></video>
-     The MP4 then streams from GitHub's CDN and never lives in the repo. -->
+<!-- The poster above is the demo's final frame; clicking it plays the MP4 (hosted on
+     GitHub's CDN, not in the repo). docs/demo.gif is a committed fallback.
+     For an INLINE player instead, replace the <a>…</a> block with:
+       <video src="https://github.com/user-attachments/assets/5cf2a29c-c08a-4184-a771-2b9e0256774f" controls muted></video> -->
 
 Built on **cc-turn-ext**, a turn-end hook engine for Claude Code. The rewrite is the default handler; bring your own.
 
