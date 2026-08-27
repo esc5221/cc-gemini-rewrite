@@ -1,5 +1,21 @@
 // Read a Claude Code transcript jsonl and expose chat view + walk-back helpers.
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync, realpathSync } from 'node:fs';
+import { join } from 'node:path';
+import { homedir } from 'node:os';
+
+// cwd -> newest session jsonl in ~/.claude/projects/<encoded cwd>. Used by arm-rewrite
+// to precompute the rewrite (the hook gets transcript_path directly).
+export function findSessionFile(cwd) {
+  let real = cwd; try { real = realpathSync(cwd); } catch {}
+  const dir = join(homedir(), '.claude', 'projects', real.replace(/[/.]/g, '-'));
+  let files; try { files = readdirSync(dir); } catch { return null; }
+  let best = null, bestM = -1;
+  for (const f of files) {
+    if (!f.endsWith('.jsonl') || f.startsWith('agent-')) continue;
+    const fp = join(dir, f); try { const m = statSync(fp).mtimeMs; if (m > bestM) { bestM = m; best = fp; } } catch {}
+  }
+  return best;
+}
 
 export function loadTranscript(path) {
   if (!path) return [];

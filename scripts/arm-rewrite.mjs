@@ -1,7 +1,51 @@
 #!/usr/bin/env node
-// Arm a one-shot manual /rewrite for the current cwd. Called by the /rewrite command.
-// Prints a progress line so the /rewrite gap shows something (not "(No output)").
+// Manual /rewrite trigger. BLOCKS here: finds the previous substantial answer, computes
+// the rewrite now, and caches it in the request. The MessageDisplay hook then renders it
+// instantly (no second gap) — the wait happens during this Bash call's spinner instead.
 import { armRequest } from '../core/requests.mjs';
+import { loadConfig } from '../core/config.mjs';
+import { findSessionFile, loadTranscript, toChat, lastSubstantialAssistant, userQuestionBefore } from '../core/transcript.mjs';
+import { rewriteText, repairText } from '../core/rewriter.mjs';
+import { checkFidelity } from '../core/fidelity.mjs';
+
+const MARKER = '↻ re-explaining';
 const note = process.argv.slice(2).join(' ').trim();
-armRequest(process.cwd(), note);
-process.stdout.write('↻ re-explaining…  (appears in a few seconds)');
+const cwd = process.cwd();
+
+(async () => {
+  const cfg = loadConfig();
+  const file = findSessionFile(cwd);
+  const events = file ? loadTranscript(file) : [];
+  const target = lastSubstantialAssistant(events, { minChars: cfg.manual?.minChars ?? 120, skipContains: MARKER });
+
+  if (!target) {
+    armRequest(cwd, note);   // arm anyway; hook will report "no previous answer"
+    process.stdout.write('↻ re-explaining… (no previous answer found)');
+    return;
+  }
+
+  const ctx = {
+    targetText: target.text, chat: toChat(events),
+    lastUser: userQuestionBefore(events, target.index), note, maxTurns: cfg.prompts.maxTurns,
+  };
+
+  let rewrite = '';
+  const ctrl = new AbortController();
+  const to = setTimeout(() => ctrl.abort(), cfg.timeoutMs || 45000);
+  try {
+    rewrite = await rewriteText(ctx, cfg, ctrl.signal);
+    if (cfg.fidelity?.check && rewrite) {
+      let { ok, missing } = checkFidelity(ctx.targetText, rewrite);
+      if (!ok && cfg.fidelity?.repair) {
+        const fixed = await repairText(ctx, cfg, missing.slice(0, 12), ctrl.signal);
+        const re = checkFidelity(ctx.targetText, fixed);
+        if (re.ok || re.missing.length < missing.length) { rewrite = fixed; ({ ok, missing } = re); }
+      }
+      if (!ok) rewrite = '';   // fail-open: hook renders nothing, original stays
+    }
+  } catch { rewrite = ''; }
+  finally { clearTimeout(to); }
+
+  armRequest(cwd, note, rewrite || null);   // cache the precomputed rewrite
+  process.stdout.write(rewrite ? '↻ re-explained ✓' : '↻ rewrite unavailable (showing original)');
+})();

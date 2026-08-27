@@ -9,10 +9,10 @@ const norm = (cwd) => { try { return realpathSync(String(cwd || 'nocwd')); } cat
 const key = (cwd) => createHash('sha1').update(norm(cwd)).digest('hex').slice(0, 16);
 const file = (cwd) => join(P.requests, key(cwd) + '.json');
 
-export function armRequest(cwd, note = '') {
+export function armRequest(cwd, note = '', rewrite = null) {
   ensureHome();
   const f = file(cwd), tmp = f + '.tmp';
-  writeFileSync(tmp, JSON.stringify({ ts: Date.now(), note, cwd }), { mode: 0o600 });
+  writeFileSync(tmp, JSON.stringify({ ts: Date.now(), note, rewrite, cwd }), { mode: 0o600 });
   renameSync(tmp, f);
   return f;
 }
@@ -22,5 +22,5 @@ export function takeRequest(cwd, { peek = false } = {}) {
   let r; try { r = JSON.parse(readFileSync(f, 'utf8')); } catch { return null; }
   if (Date.now() - (r.ts || 0) > TTL) { try { rmSync(f, { force: true }); } catch {} return null; }
   if (!peek) { try { rmSync(f, { force: true }); } catch {} }
-  return { note: r.note || '' };
+  return { note: r.note || '', rewrite: r.rewrite || null };
 }

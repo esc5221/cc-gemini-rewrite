@@ -41,6 +41,9 @@ async function main() {
 
     // ===== manual /rewrite =====
     if (req) {
+      // arm-rewrite already computed it (blocking) → render instantly.
+      if (req.rewrite) { onlyBlock(cfg.prompts.header, req.rewrite); log({ mode: 'manual', cached: true }); clearBuffer(session, message); return; }
+      // fallback: compute now (arm couldn't reach the answer, or failed open)
       const target = lastSubstantialAssistant(events, {
         minChars: cfg.manual?.minChars ?? 120, skipId: message, skipContains: MARKER,
       });
@@ -48,7 +51,7 @@ async function main() {
       const chat = toChat(events);
       const ctx = { targetText: target.text, chat, lastUser: userQuestionBefore(events, target.index), note: req.note, maxTurns: cfg.prompts.maxTurns };
       const rw = await produce(ctx, cfg);
-      onlyBlock(cfg.prompts.header, rw.text);
+      onlyBlock(cfg.prompts.header, rw.text || '(re-explain unavailable — original stands)');
       log({ mode: 'manual', fired: true, fidelity: rw.fidelity, len: target.text.length });
       clearBuffer(session, message); return;
     }
