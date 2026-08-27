@@ -4,7 +4,9 @@
 
 <img src="docs/demo-poster.png" alt="cc-gemini-rewrite — a slop answer re-explained cleanly by Gemini, inside Claude Code" width="820">
 
-**Claude Code's technical answers are often hard to read** — the point buried under hedging and buzzwords. **cc-gemini-rewrite** fixes that:
+**Claude Code's technical answers are often hard to read** — the point buried under hedging and buzzwords.
+
+**cc-gemini-rewrite** fixes that:
 
 - **Rewrites at turn's end** — an LLM turns the same answer into something you can actually use.
 - **Renders in place** — streamed straight into Claude Code's own screen, not routed back through the model.

@@ -4,7 +4,9 @@
 
 <img src="docs/demo-poster.png" alt="cc-gemini-rewrite — slop 답변을 Gemini가 깔끔하게 재설명, Claude Code 안에서" width="820">
 
-**Claude Code의 기술 답변은 읽기 어려울 때가 많다** — 요점이 겉도는 말과 버즈워드에 파묻힌다. **cc-gemini-rewrite**가 해결한다:
+**Claude Code의 기술 답변은 읽기 어려울 때가 많다** — 요점이 겉도는 말과 버즈워드에 파묻힌다.
+
+**cc-gemini-rewrite**가 해결한다:
 
 - **turn이 끝나면 다시 쓴다** — LLM이 같은 답을 바로 쓸 수 있는 형태로 재작성.
 - **그 자리에 렌더** — Claude Code 화면에 그대로 스트리밍. 모델을 다시 거치지 않는다.
