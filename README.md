@@ -2,81 +2,21 @@
 
 # cc-gemini-rewrite
 
-<a href="https://github.com/user-attachments/assets/5cf2a29c-c08a-4184-a771-2b9e0256774f"><img src="docs/demo-poster.png" alt="cc-turn-ext — a sloppy answer re-explained cleanly by Gemini, inside Claude Code" width="820"></a>
+<img src="docs/demo-poster.png" alt="cc-gemini-rewrite — a slop answer re-explained cleanly by Gemini, inside Claude Code" width="820">
 
-Claude Code's technical answers are often hard to read — the point buried under hedging and buzzwords. **cc-gemini-rewrite catches the end of every turn and has an LLM rewrite that same answer into something you can actually use**, streamed straight into Claude Code's own screen. The conversation loop, transcript, and API history stay untouched.
+**Claude Code's technical answers are often hard to read** — the point buried under hedging and buzzwords. **cc-gemini-rewrite** fixes that:
 
-```
-you:    why is my SQL query slow?
-Claude: Great question! It's likely slow due to suboptimal performance at the data
-        layer — consider indexing, query optimization, and a caching strategy. By
-        following these industry-standard optimizations you should see meaningful
-        improvements in throughput and latency! 🚀
+- **Rewrites at turn's end** — an LLM turns the same answer into something you can actually use.
+- **Renders in place** — streamed straight into Claude Code's own screen, not routed back through the model.
+- **Leaves no trace** — the conversation loop, transcript, and API history stay untouched.
 
-        [re-explained by Gemini]        ← appended automatically at turn end
-        Your query is slow because the DB reads unindexed data off disk, the planner
-        picks a bad execution plan, or repeat reads aren't served from cache.
-        Next: run EXPLAIN to see the plan and pin the exact bottleneck.
-```
+**`/rewrite` — trigger a re-explanation inline, right where you are.** Watch the 20-second demo:
 
-**`/rewrite` — trigger a re-explanation inline, right where you are.**
-
-<!-- The demo poster at the top is the final frame; clicking it plays the MP4 (hosted on
-     GitHub's CDN, not in the repo). docs/demo.gif is a committed fallback.
-     For an INLINE player instead, replace the <a>…</a> block with:
-       <video src="https://github.com/user-attachments/assets/5cf2a29c-c08a-4184-a771-2b9e0256774f" controls muted></video> -->
+https://github.com/user-attachments/assets/5cf2a29c-c08a-4184-a771-2b9e0256774f
 
 Built on **cc-turn-ext**, a turn-end hook engine for Claude Code. The rewrite is the default handler; bring your own.
 
 ---
-
-## Why
-
-Claude Code's technical explanations are often hard to read. The conclusion is buried, they're vague, there's no *why*, and it's unclear what to do next. Every time, you re-ask — "what's the point", "say it simpler" — and the round-trips pile up.
-
-This kills the re-asking. **When an answer is hard, the LLM fixes it up before you have to ask.** You pick the trigger: always rewrite when it's long (8+ lines), or let the LLM judge clarity.
-
-## Why not a stop hook
-
-Claude Code already has a stop hook. But building "re-explain" on it:
-
-```
-stop hook → LLM writes an explanation → that text is fed back to the Claude model
-          → Claude reads it and parrots it back
-          = one more round-trip + Claude reprocessing (slow, and filtered through Claude)
-```
-
-So it doesn't use the stop hook. It **hooks the exact code point where a turn ends, in the binary**, and streams the rewrite **directly into Claude Code's screen without going through the Claude model**. Nothing lands in the transcript or the next request.
-
-## How it works
-
-```
-                         your prompt
-                            │
-                   ┌────────▼────────┐
-                   │   Claude Code   │   untouched. the conversation loop is not modified.
-                   │  (turn / answer) │
-                   └────────┬────────┘
-                            │ turn ends (return completed)
-        injected hook ┄┄┄┄┄▶│
-                            ▼
-                   ┌─────────────────┐   POST /turn-end (cwd)
-                   │  sidecar :61237 │   loads the full current-session context
-                   │  policy decides │   → rewrite or not?
-                   └────────┬────────┘
-                    fire?   │ yes                (no → stays silent)
-                            ▼
-                   ┌─────────────────┐
-                   │  LLM (provider) │   rewrites the same content clearly
-                   └────────┬────────┘   (conclusion first · concrete · why · next action)
-                            │ SSE stream
-         ┌──────────────────▼──────────────────┐
-         │  streamed into Claude Code's screen  │   full markdown render.
-         │  (stream_event → committed markdown) │   never written to jsonl / API.
-         └─────────────────────────────────────┘
-```
-
-Deciding (policy) and rewriting (rewriter) are separate. The policy is one of five rules; the rewriter is a handler.
 
 ## Install
 
@@ -151,6 +91,54 @@ Switch with `/ccturn lines|judge|hybrid|always|off`.
 
 Policy buttons · recent activity (original preview · reason · rewrite · latency) · live override (model, thresholds, prompts) without editing files.
 
+## Why
+
+Claude Code's technical explanations are often hard to read. The conclusion is buried, they're vague, there's no *why*, and it's unclear what to do next. Every time, you re-ask — "what's the point", "say it simpler" — and the round-trips pile up.
+
+This kills the re-asking. **When an answer is hard, the LLM fixes it up before you have to ask.** You pick the trigger: always rewrite when it's long (8+ lines), or let the LLM judge clarity.
+
+## Why not a stop hook
+
+Claude Code already has a stop hook. But building "re-explain" on it:
+
+```
+stop hook → LLM writes an explanation → that text is fed back to the Claude model
+          → Claude reads it and parrots it back
+          = one more round-trip + Claude reprocessing (slow, and filtered through Claude)
+```
+
+So it doesn't use the stop hook. It **hooks the exact code point where a turn ends, in the binary**, and streams the rewrite **directly into Claude Code's screen without going through the Claude model**. Nothing lands in the transcript or the next request.
+
+## How it works
+
+```
+                         your prompt
+                            │
+                   ┌────────▼────────┐
+                   │   Claude Code   │   untouched. the conversation loop is not modified.
+                   │  (turn / answer) │
+                   └────────┬────────┘
+                            │ turn ends (return completed)
+        injected hook ┄┄┄┄┄▶│
+                            ▼
+                   ┌─────────────────┐   POST /turn-end (cwd)
+                   │  sidecar :61237 │   loads the full current-session context
+                   │  policy decides │   → rewrite or not?
+                   └────────┬────────┘
+                    fire?   │ yes                (no → stays silent)
+                            ▼
+                   ┌─────────────────┐
+                   │  LLM (provider) │   rewrites the same content clearly
+                   └────────┬────────┘   (conclusion first · concrete · why · next action)
+                            │ SSE stream
+         ┌──────────────────▼──────────────────┐
+         │  streamed into Claude Code's screen  │   full markdown render.
+         │  (stream_event → committed markdown) │   never written to jsonl / API.
+         └─────────────────────────────────────┘
+```
+
+Deciding (policy) and rewriting (rewriter) are separate. The policy is one of five rules; the rewriter is a handler.
+
 ## Provider
 
 Any **OpenAI-compatible** endpoint. Set in config `provider`:
@@ -180,7 +168,8 @@ Presets:
 { "baseUrl": "http://127.0.0.1:11434/v1", "model": "llama3.1", "apiKey": "" }
 ```
 
-## Config & customization
+<details>
+<summary><strong>Config &amp; customization</strong> — user layer, precedence, handler contract</summary>
 
 Your settings live in **`~/.cc-turn-ext/`** — never edit the package, so updates never clobber your changes.
 
@@ -217,6 +206,8 @@ ctx = { sessionId, cwd, sessionFile, events, chat, lastAssistant, lastUser }
 kind: module (default) | command (stdin ctx JSON, stdout text) | http (POST → SSE)
 ```
 
+</details>
+
 ## Internals (binary patch)
 
 Claude Code is a code-signed Bun standalone (Mach-O). `core/patcher/patch.mjs`:
@@ -228,7 +219,8 @@ Claude Code is a code-signed Bun standalone (Mach-O). `core/patcher/patch.mjs`:
 
 The anchor is a string literal, so it survives minification — verified re-patching cleanly across Claude versions.
 
-## Structure
+<details>
+<summary><strong>Structure</strong></summary>
 
 ```
 cc-gemini-rewrite/            (package — never edit as a user)
@@ -245,3 +237,5 @@ cc-gemini-rewrite/            (package — never edit as a user)
 ├── defaults/config.json      package defaults
 └── bin/ccturn                CLI: launch · setup · doctor · uninstall · new-handler · repatch
 ```
+
+</details>

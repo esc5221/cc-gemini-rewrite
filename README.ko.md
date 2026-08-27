@@ -2,80 +2,21 @@
 
 # cc-gemini-rewrite
 
-<a href="https://github.com/user-attachments/assets/5cf2a29c-c08a-4184-a771-2b9e0256774f"><img src="docs/demo-poster.png" alt="cc-turn-ext — slop 답변을 Gemini가 깔끔하게 재설명, Claude Code 안에서" width="820"></a>
+<img src="docs/demo-poster.png" alt="cc-gemini-rewrite — slop 답변을 Gemini가 깔끔하게 재설명, Claude Code 안에서" width="820">
 
-Claude Code의 기술 답변은 요점이 겉도는 말과 버즈워드에 파묻혀 읽기 어려울 때가 많다. **cc-gemini-rewrite는 매 turn이 끝나는 순간을 잡아, 같은 답을 LLM이 바로 쓸 수 있는 형태로 다시 써서** Claude Code 화면에 그대로 스트리밍한다. 대화 루프·기록·API 히스토리는 건드리지 않는다.
+**Claude Code의 기술 답변은 읽기 어려울 때가 많다** — 요점이 겉도는 말과 버즈워드에 파묻힌다. **cc-gemini-rewrite**가 해결한다:
 
-```
-당신:   내 SQL 쿼리 왜 느려?
-Claude: 좋은 질문이에요! 데이터 계층의 최적화되지 않은 성능 때문일 가능성이 큽니다 —
-        인덱싱, 쿼리 최적화, 캐싱 전략을 고려해 보세요. 이런 업계 표준 최적화를 따르면
-        처리량과 지연 시간에서 의미 있는 개선을 보실 수 있을 겁니다! 🚀
+- **turn이 끝나면 다시 쓴다** — LLM이 같은 답을 바로 쓸 수 있는 형태로 재작성.
+- **그 자리에 렌더** — Claude Code 화면에 그대로 스트리밍. 모델을 다시 거치지 않는다.
+- **흔적 없음** — 대화 루프·기록·API 히스토리는 건드리지 않는다.
 
-        [re-explained by Gemini]        ← turn 끝에 자동으로 붙음
-        쿼리가 느린 건 DB가 인덱스 없는 데이터를 디스크에서 읽거나, 플래너가 나쁜 실행
-        계획을 고르거나, 반복 읽기가 캐시를 안 타서다.
-        다음: EXPLAIN으로 실행 계획을 보고 정확한 병목을 짚어라.
-```
+**`/rewrite` — 지금 있는 자리에서 바로 재설명을 띄운다.** 20초 데모:
 
-**`/rewrite` — 지금 있는 자리에서 바로 재설명을 띄운다.**
-
-<!-- 맨 위 데모 포스터는 마지막 프레임. 클릭하면 MP4가 재생된다(GitHub CDN 호스팅, 레포엔 없음).
-     docs/demo.gif는 커밋된 폴백.
-     인라인 플레이어를 원하면 <a>…</a> 블록을 다음으로 교체:
-       <video src="https://github.com/user-attachments/assets/5cf2a29c-c08a-4184-a771-2b9e0256774f" controls muted></video> -->
+https://github.com/user-attachments/assets/5cf2a29c-c08a-4184-a771-2b9e0256774f
 
 **cc-turn-ext**(Claude Code turn-end 훅 엔진) 위에 얹은 대표앱. rewrite는 기본 핸들러이고, 원하는 걸 얹을 수 있다.
 
 ---
-
-## 왜 만들었나
-
-Claude Code의 기술 설명이 자주 안 읽힌다. 결론이 묻히고, 모호하고, "왜"가 없고, 다음에 뭘 할지 안 보인다. 그때마다 "결론이 뭐야", "쉽게 다시" 되묻는 왕복이 쌓인다.
-
-그 되묻기를 없앤다. **답변이 어려우면 물어보기 전에 LLM이 먼저 고쳐 쓴다.** 판단 기준은 고른다 — 길면(8줄+) 무조건, 아니면 LLM이 이해도 판정.
-
-## 왜 stop 훅으로는 안 되나
-
-Claude Code에 원래 stop 훅이 있다. 그런데 그걸로 "다시 설명"을 만들면:
-
-```
-stop 훅 → LLM이 설명 생성 → 그 텍스트를 Claude 모델에 다시 먹임
-        → Claude가 또 읽고 그대로 읊음
-        = 왕복 한 번 더 + Claude 재처리 (느리고, Claude를 거쳐 변형됨)
-```
-
-그래서 stop 훅을 안 쓴다. **turn이 끝나는 코드 지점을 바이너리에서 직접 후킹**하고, rewrite를 **Claude 모델 안 거치고 Claude Code 화면에 그대로 스트리밍**한다. 기록과 다음 요청에는 안 남는다.
-
-## 동작
-
-```
-                         당신 질문
-                            │
-                   ┌────────▼────────┐
-                   │   Claude Code   │   원래 그대로. 대화 루프 안 건드림.
-                   │  (turn 진행·응답) │
-                   └────────┬────────┘
-                            │ turn 종료 (return completed)
-          주입된 훅 ┄┄┄┄┄┄┄▶│
-                            ▼
-                   ┌─────────────────┐   POST /turn-end (cwd)
-                   │  sidecar :61237 │   현재 세션 전체 컨텍스트 로드
-                   │   policy 판단    │   → 재작성할까?
-                   └────────┬────────┘
-                    fire?   │ yes                (no → 침묵)
-                            ▼
-                   ┌─────────────────┐
-                   │  LLM (provider) │   같은 내용을 이해되게 다시 씀
-                   └────────┬────────┘   (결론 먼저·구체·왜·다음 액션)
-                            │ SSE 스트리밍
-         ┌──────────────────▼──────────────────┐
-         │  Claude Code 화면에 바로 출력         │   마크다운 풀렌더.
-         │  (stream_event → 마크다운 커밋)       │   jsonl·API엔 안 남김.
-         └─────────────────────────────────────┘
-```
-
-판단(policy)과 재작성(rewriter)은 분리. policy는 규칙 5종 중 선택, rewriter는 핸들러.
 
 ## 설치
 
@@ -150,6 +91,54 @@ hybrid   N줄↑ 무조건 + 그 아래는 LLM 판단
 
 정책 버튼 · 최근 발동 기록(원본 프리뷰 · 이유 · 재작성 · 지연) · 라이브 오버라이드(모델·임계값·프롬프트) 파일 수정 없이.
 
+## 왜 만들었나
+
+Claude Code의 기술 설명이 자주 안 읽힌다. 결론이 묻히고, 모호하고, "왜"가 없고, 다음에 뭘 할지 안 보인다. 그때마다 "결론이 뭐야", "쉽게 다시" 되묻는 왕복이 쌓인다.
+
+그 되묻기를 없앤다. **답변이 어려우면 물어보기 전에 LLM이 먼저 고쳐 쓴다.** 판단 기준은 고른다 — 길면(8줄+) 무조건, 아니면 LLM이 이해도 판정.
+
+## 왜 stop 훅으로는 안 되나
+
+Claude Code에 원래 stop 훅이 있다. 그런데 그걸로 "다시 설명"을 만들면:
+
+```
+stop 훅 → LLM이 설명 생성 → 그 텍스트를 Claude 모델에 다시 먹임
+        → Claude가 또 읽고 그대로 읊음
+        = 왕복 한 번 더 + Claude 재처리 (느리고, Claude를 거쳐 변형됨)
+```
+
+그래서 stop 훅을 안 쓴다. **turn이 끝나는 코드 지점을 바이너리에서 직접 후킹**하고, rewrite를 **Claude 모델 안 거치고 Claude Code 화면에 그대로 스트리밍**한다. 기록과 다음 요청에는 안 남는다.
+
+## 동작
+
+```
+                         당신 질문
+                            │
+                   ┌────────▼────────┐
+                   │   Claude Code   │   원래 그대로. 대화 루프 안 건드림.
+                   │  (turn 진행·응답) │
+                   └────────┬────────┘
+                            │ turn 종료 (return completed)
+          주입된 훅 ┄┄┄┄┄┄┄▶│
+                            ▼
+                   ┌─────────────────┐   POST /turn-end (cwd)
+                   │  sidecar :61237 │   현재 세션 전체 컨텍스트 로드
+                   │   policy 판단    │   → 재작성할까?
+                   └────────┬────────┘
+                    fire?   │ yes                (no → 침묵)
+                            ▼
+                   ┌─────────────────┐
+                   │  LLM (provider) │   같은 내용을 이해되게 다시 씀
+                   └────────┬────────┘   (결론 먼저·구체·왜·다음 액션)
+                            │ SSE 스트리밍
+         ┌──────────────────▼──────────────────┐
+         │  Claude Code 화면에 바로 출력         │   마크다운 풀렌더.
+         │  (stream_event → 마크다운 커밋)       │   jsonl·API엔 안 남김.
+         └─────────────────────────────────────┘
+```
+
+판단(policy)과 재작성(rewriter)은 분리. policy는 규칙 5종 중 선택, rewriter는 핸들러.
+
 ## Provider
 
 **OpenAI 호환** 엔드포인트면 다 된다. config `provider`:
@@ -179,7 +168,8 @@ reasoningEffort  "low"=thinking 끔(빠름); "medium"=품질↑·2배 느림
 { "baseUrl": "http://127.0.0.1:11434/v1", "model": "llama3.1", "apiKey": "" }
 ```
 
-## 설정 & 커스터마이즈
+<details>
+<summary><strong>설정 &amp; 커스터마이즈</strong> — 유저 레이어, 우선순위, 핸들러 계약</summary>
 
 내 설정은 **`~/.cc-turn-ext/`** 에 있다 — 패키지는 안 건드리니 업데이트해도 커스텀 유지.
 
@@ -216,6 +206,8 @@ ctx = { sessionId, cwd, sessionFile, events, chat, lastAssistant, lastUser }
 kind: module(기본) | command(stdin ctx JSON, stdout 텍스트) | http(POST → SSE)
 ```
 
+</details>
+
 ## 내부 (바이너리 패치)
 
 Claude Code는 코드서명된 Bun standalone(Mach-O). `core/patcher/patch.mjs`:
@@ -227,7 +219,8 @@ Claude Code는 코드서명된 Bun standalone(Mach-O). `core/patcher/patch.mjs`:
 
 앵커가 문자열 리터럴이라 minify에도 살아남아, Claude 버전이 올라가도 깨끗하게 재패치됨(실측 확인).
 
-## 구조
+<details>
+<summary><strong>구조</strong></summary>
 
 ```
 cc-gemini-rewrite/            (패키지 — 유저는 안 건드림)
@@ -244,3 +237,5 @@ cc-gemini-rewrite/            (패키지 — 유저는 안 건드림)
 ├── defaults/config.json      패키지 기본값
 └── bin/ccturn                CLI: launch · setup · doctor · uninstall · new-handler · repatch
 ```
+
+</details>
