@@ -2,6 +2,8 @@
 
 # cc-gemini-rewrite
 
+<a href="https://github.com/user-attachments/assets/5cf2a29c-c08a-4184-a771-2b9e0256774f"><img src="docs/demo-poster.png" alt="cc-turn-ext — slop 답변을 Gemini가 깔끔하게 재설명, Claude Code 안에서" width="820"></a>
+
 Claude Code의 기술 답변은 요점이 겉도는 말과 버즈워드에 파묻혀 읽기 어려울 때가 많다. **cc-gemini-rewrite는 매 turn이 끝나는 순간을 잡아, 같은 답을 LLM이 바로 쓸 수 있는 형태로 다시 써서** Claude Code 화면에 그대로 스트리밍한다. 대화 루프·기록·API 히스토리는 건드리지 않는다.
 
 ```
@@ -16,13 +18,9 @@ Claude: 좋은 질문이에요! 데이터 계층의 최적화되지 않은 성�
         다음: EXPLAIN으로 실행 계획을 보고 정확한 병목을 짚어라.
 ```
 
-**`/rewrite` — 지금 있는 자리에서 바로 재설명을 띄운다:**
+**`/rewrite` — 지금 있는 자리에서 바로 재설명을 띄운다.**
 
-<a href="https://github.com/user-attachments/assets/5cf2a29c-c08a-4184-a771-2b9e0256774f"><img src="docs/demo-poster.png" alt="cc-turn-ext — slop 답변을 Gemini가 깔끔하게 재설명, Claude Code 안에서" width="820"></a>
-
-▶ **[데모 재생](https://github.com/user-attachments/assets/5cf2a29c-c08a-4184-a771-2b9e0256774f)** — 20초: 일부러 slop하게 쓴 답변을, Gemini가 Claude Code 안에서 바로 깔끔하게 재설명.
-
-<!-- 위 포스터는 데모의 마지막 프레임. 클릭하면 MP4가 재생된다(GitHub CDN 호스팅, 레포엔 없음).
+<!-- 맨 위 데모 포스터는 마지막 프레임. 클릭하면 MP4가 재생된다(GitHub CDN 호스팅, 레포엔 없음).
      docs/demo.gif는 커밋된 폴백.
      인라인 플레이어를 원하면 <a>…</a> 블록을 다음으로 교체:
        <video src="https://github.com/user-attachments/assets/5cf2a29c-c08a-4184-a771-2b9e0256774f" controls muted></video> -->

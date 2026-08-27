@@ -2,6 +2,8 @@
 
 # cc-gemini-rewrite
 
+<a href="https://github.com/user-attachments/assets/5cf2a29c-c08a-4184-a771-2b9e0256774f"><img src="docs/demo-poster.png" alt="cc-turn-ext — a sloppy answer re-explained cleanly by Gemini, inside Claude Code" width="820"></a>
+
 Claude Code's technical answers are often hard to read — the point buried under hedging and buzzwords. **cc-gemini-rewrite catches the end of every turn and has an LLM rewrite that same answer into something you can actually use**, streamed straight into Claude Code's own screen. The conversation loop, transcript, and API history stay untouched.
 
 ```
@@ -17,13 +19,9 @@ Claude: Great question! It's likely slow due to suboptimal performance at the da
         Next: run EXPLAIN to see the plan and pin the exact bottleneck.
 ```
 
-**`/rewrite` — trigger a re-explanation inline, right where you are:**
+**`/rewrite` — trigger a re-explanation inline, right where you are.**
 
-<a href="https://github.com/user-attachments/assets/5cf2a29c-c08a-4184-a771-2b9e0256774f"><img src="docs/demo-poster.png" alt="cc-turn-ext — a sloppy answer re-explained cleanly by Gemini, inside Claude Code" width="820"></a>
-
-▶ **[Play the demo](https://github.com/user-attachments/assets/5cf2a29c-c08a-4184-a771-2b9e0256774f)** — 20s: a deliberately sloppy answer, re-explained clean by Gemini, right inside Claude Code.
-
-<!-- The poster above is the demo's final frame; clicking it plays the MP4 (hosted on
+<!-- The demo poster at the top is the final frame; clicking it plays the MP4 (hosted on
      GitHub's CDN, not in the repo). docs/demo.gif is a committed fallback.
      For an INLINE player instead, replace the <a>…</a> block with:
        <video src="https://github.com/user-attachments/assets/5cf2a29c-c08a-4184-a771-2b9e0256774f" controls muted></video> -->
