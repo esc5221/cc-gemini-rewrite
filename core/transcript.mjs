@@ -3,7 +3,7 @@ import { readFileSync, readdirSync, statSync, realpathSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 
-// cwd -> newest session jsonl in ~/.claude/projects/<encoded cwd>. Used by arm-rewrite
+// cwd -> newest session jsonl in ~/.claude/projects/<encoded cwd>. Used by rewrite.mjs
 // to precompute the rewrite (the hook gets transcript_path directly).
 export function findSessionFile(cwd) {
   let real = cwd; try { real = realpathSync(cwd); } catch {}

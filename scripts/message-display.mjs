@@ -41,7 +41,7 @@ async function main() {
 
     // ===== manual /rewrite =====
     if (req) {
-      // arm-rewrite already computed it (blocking) → render instantly.
+      // rewrite.mjs already computed it (blocking) → render instantly.
       if (req.rewrite) { onlyBlock(cfg.prompts.header, req.rewrite); log({ mode: 'manual', cached: true }); clearBuffer(session, message); return; }
       // fallback: compute now (arm couldn't reach the answer, or failed open)
       const target = lastSubstantialAssistant(events, {

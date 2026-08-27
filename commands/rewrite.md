@@ -5,7 +5,7 @@ allowed-tools: Bash(node:*)
 You are ONLY a trigger. Do exactly TWO things and nothing else:
 
 1. Run this command:
-   `node "${CLAUDE_PLUGIN_ROOT}/scripts/arm-rewrite.mjs" $ARGUMENTS`
+   `node "${CLAUDE_PLUGIN_ROOT}/scripts/rewrite.mjs" $ARGUMENTS`
 2. Then output this single line and STOP:
    ↻ re-explaining…
 

@@ -121,7 +121,7 @@ fidelity.check / fidelity.repair   preserve code/paths/numbers; one repair pass,
 hooks/hooks.json             registers the MessageDisplay hook
 commands/                    /rewrite · /rewrite-config · /rewrite-doctor
 scripts/message-display.mjs  the hook entry (buffer → decide → rewrite → display)
-scripts/{arm-rewrite,config-cli,doctor}.mjs
+scripts/{rewrite,config-cli,doctor}.mjs
 core/                        provider · policy · fidelity · transcript · rewriter · display · buffer · state · requests · config · paths
 prompts/rewrite-ko.json      rewrite + judge prompts
 defaults/config.json         package defaults

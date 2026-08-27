@@ -117,7 +117,7 @@ fidelity.check / fidelity.repair   코드/경로/숫자 보존; repair 1회, 그
 hooks/hooks.json             MessageDisplay 훅 등록
 commands/                    /rewrite · /rewrite-config · /rewrite-doctor
 scripts/message-display.mjs  훅 엔트리 (buffer → decide → rewrite → display)
-scripts/{arm-rewrite,config-cli,doctor}.mjs
+scripts/{rewrite,config-cli,doctor}.mjs
 core/                        provider · policy · fidelity · transcript · rewriter · display · buffer · state · requests · config · paths
 prompts/rewrite-ko.json      재작성 + judge 프롬프트
 defaults/config.json         패키지 기본값
