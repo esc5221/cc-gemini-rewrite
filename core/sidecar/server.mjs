@@ -2,6 +2,7 @@
 import { createServer } from 'node:http';
 import { buildContext } from './context.mjs';
 import { runHandler } from './resolve.mjs';
+import { detableStream } from './detable.mjs';
 import { scheduleScrub } from './scrub.mjs';
 import { readState, writeState, logFire, readHistory } from './state.mjs';
 import { dashboardHtml } from './dashboard.mjs';
@@ -60,7 +61,8 @@ const server = createServer(async (req, res) => {
   req.on('close', ()=>ac.abort());
   const t0 = performance.now(); let started=false, output='';
   try {
-    for await (const chunk of runHandler(ctx, { signal: ac.signal })) {
+    // Pipe tables break in the TUI — rewrite them into label blocks before they render.
+    for await (const chunk of detableStream(runHandler(ctx, { signal: ac.signal }))) {
       if (!chunk) continue;
       if (!started) { started=true; res.writeHead(200,{'content-type':'text/event-stream','cache-control':'no-cache'}); }
       output += chunk; res.write(`data: ${JSON.stringify({ t: chunk })}\n\n`);
