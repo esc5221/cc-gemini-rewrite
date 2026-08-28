@@ -2,21 +2,16 @@
 
 # cc-gemini-rewrite
 
-Claude Code 답변이 어려우면, LLM(기본 Gemini)이 **같은 답을** 이해되게 다시 써서 **원문 바로 아래** 화면에 붙인다 — Claude의 컨텍스트와 JSONL transcript에는 원문이 그대로 남는다.
+Claude Code 답변이 어려우면, LLM이 **같은 답을** 이해되게 다시 써서 바로 아래에 붙인다 — transcript와 Claude의 컨텍스트에는 원문이 그대로 남는다.
 
-공식 [`MessageDisplay`](https://code.claude.com/docs/en/hooks) 훅 위에 얹은 작은 **Claude Code 플러그인**이다. 바이너리 패치도, 프록시도 없다. display 전용이라 Claude가 보는 것/하는 것을 절대 바꾸지 않는다.
+![cc-gemini-rewrite — slop 답변을 바로 아래 깔끔하게 재설명](docs/demo-poster.png)
 
-```
-❯ 내 SQL 쿼리 왜 느려?
-⏺ 좋은 질문이에요! …데이터 계층의 최적화되지 않은 성능… 업계 표준 최적화…
-  처리량과 지연 시간에서 의미 있는 개선을! 🚀
+공식 [`MessageDisplay`](https://code.claude.com/docs/en/hooks) 훅 위에 얹은 작은 **Claude Code 플러그인**. 바이너리 패치도, 프록시도 없다. display 전용이라 Claude가 보는 것/하는 것을 절대 바꾸지 않는다.
 
-  ────────────
-  [re-explained by Gemini]
-  쿼리가 느린 건 DB가 인덱스 없는 데이터를 디스크에서 읽거나, 플래너가
-  나쁜 계획을 고르거나, 반복 읽기가 캐시를 안 타서다.
-  다음: EXPLAIN으로 실행 계획을 보고 병목을 짚어라.
-```
+- **`/rewrite`** — 직전 답을 즉석에서 재설명 (긴 답은 자동으로도 켤 수 있음).
+- **transcript 유지** — 재작성은 화면에만. `verbose`로 원문 확인.
+- **provider 무관** — OpenAI 호환이면 다 됨 (Gemini, OpenAI, OpenRouter, 로컬).
+- **충실도** — 명령·경로·숫자·코드 토큰을 결정론적으로 보존. 실패하면 원문으로 fail-open.
 
 ---
 
@@ -29,12 +24,10 @@ Claude가 메시지를 끝냄
   delta 버퍼링 → final에 정책 판단 → LLM이 같은 내용을 재작성
         │                              → fidelity 검사 (코드/경로/숫자 보존)
         ▼
-  displayContent = 원문 + 재설명 블록   (transcript엔 원문 유지)
+  displayContent = 원문 + 재설명 블록      (transcript엔 원문 유지)
 ```
 
-- **display 전용.** 재작성은 화면에만. transcript·다음 요청은 그대로. `verbose`로 원문 확인 가능.
-- **스트리밍 아닌 블록.** 훅은 final에 한 번 반환 → 재작성은 (LLM 지연 후) 블록으로 뜬다. 토큰 단위 스트리밍 아님.
-- **fail-open.** 에러·타임아웃(60s)·fidelity 실패 시 원문 그대로 표시.
+`/rewrite`는 **커맨드의 `Bash` 단계가 도는 동안** 재작성을 미리 계산·캐시해서, 블록이 한 번에 딱 뜬다 — 답변 뒤 프리즈 없음. 재작성은 라이브 토큰 스트리밍이 아니라 블록으로 등장하는데, 그게 공식 훅을 쓰는 유일한 대가다.
 
 ## 설치
 
@@ -55,16 +48,9 @@ cd cc-gemini-rewrite
 
 그다음 provider 설정 후 **새 claude 세션을 켜고** `/rewrite-doctor`. 제거는 `./uninstall.sh`.
 
-### 구버전(바이너리 패치)에서 마이그레이션
-
-구버전은 Claude Code 바이너리를 패치했지만, 이건 안 한다 — 공식 훅이다 (구버전은 `binary-patch` 브랜치에 보존). 전환:
-
-1. 원본 `claude` 복원 — 옛 `ccturn uninstall` 실행, 셸 rc의 `alias claude=ccturn` 삭제.
-2. `./install.sh`.
-
 ## Provider 설정
 
-**OpenAI 호환** 엔드포인트면 다 된다. `~/.claude/cc-gemini-rewrite/config.json`:
+**OpenAI 호환** 엔드포인트, `~/.claude/cc-gemini-rewrite/config.json`:
 
 ```json
 {
@@ -84,22 +70,25 @@ cd cc-gemini-rewrite
 
 ```
 /rewrite               직전 답을 인라인으로 재설명
-/rewrite 더 짧게        스티어링 (아무 힌트: "영어로", "초보자용으로")
+/rewrite 더 짧게        스티어링 ("영어로", "초보자용으로" 등)
 ```
 
-자동 재설명 켜기(선택, 안전망):
+자동 재설명 켜기(선택):
 
 ```
-/rewrite-config policy lines    N줄 이상 답은 무조건 재설명 (LLM 게이트 없음)
-/rewrite-config policy judge    LLM이 이해도 판정
-/rewrite-config policy off      수동 전용으로 (기본)
-/rewrite-config off             플러그인 전체 일시정지
-/rewrite-config                 현재 설정 보기
+/rewrite-config policy lines    N줄 이상 답은 무조건 재설명 (룰베이스)
+/rewrite-config policy judge     LLM이 이해도 판정
+/rewrite-config policy off       수동 전용 (기본)   ·   /rewrite-config off   전체 일시정지
+/rewrite-config                  현재 설정 보기
+/rewrite-doctor                  버전 · 훅 · provider 키 · 연결성
 ```
 
-진단: `/rewrite-doctor` (버전 · 훅 · provider 키 · 연결성)
+### 구버전(바이너리 패치)에서 마이그레이션
 
-## 설정 레퍼런스
+구버전은 Claude Code 바이너리를 패치했지만, 이건 안 한다 — 공식 훅이다 (구버전은 `binary-patch` 브랜치에 보존). 전환: 옛 `ccturn uninstall` 실행 → 셸 rc의 `alias claude=ccturn` 삭제 → `./install.sh`.
+
+<details>
+<summary><strong>설정 레퍼런스</strong></summary>
 
 ```
 provider.baseUrl / model / apiKey / apiKeyEnv / apiKeyKeychain / headers / reasoningEffort
@@ -110,16 +99,20 @@ minChars          이보다 짧은 답은 auto 재설명 스킵 (기본 200)
 fidelity.check / fidelity.repair   코드/경로/숫자 보존; repair 1회, 그래도 실패면 fail-open
 ```
 
-## 구조
+</details>
+
+<details>
+<summary><strong>구조</strong></summary>
 
 ```
-.claude-plugin/plugin.json   플러그인 매니페스트
-hooks/hooks.json             MessageDisplay 훅 등록
-commands/                    /rewrite · /rewrite-config · /rewrite-doctor
-scripts/message-display.mjs  훅 엔트리 (buffer → decide → rewrite → display)
+.claude-plugin/        plugin.json · marketplace.json
+hooks/hooks.json       MessageDisplay 훅 등록
+commands/              /rewrite · /rewrite-config · /rewrite-doctor
+scripts/message-display.mjs   훅 (buffer → decide → rewrite → display)
 scripts/{rewrite,config-cli,doctor}.mjs
-core/                        provider · policy · fidelity · transcript · rewriter · display · buffer · state · requests · config · paths
-prompts/rewrite-ko.json      재작성 + judge 프롬프트
-defaults/config.json         패키지 기본값
-install.sh · uninstall.sh    원커맨드 전역 설치 / 제거
+core/                  provider · policy · fidelity · transcript · rewriter · display · buffer · state · requests · config · paths
+prompts/rewrite-ko.json · defaults/config.json
+install.sh · uninstall.sh
 ```
+
+</details>

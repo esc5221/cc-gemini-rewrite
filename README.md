@@ -2,21 +2,16 @@
 
 # cc-gemini-rewrite
 
-When a Claude Code answer is hard to read, an LLM (Gemini by default) rewrites the **same** answer clearly and it appears **right below the original**, on screen — while Claude's context and the JSONL transcript keep the untouched original.
+When a Claude Code answer is hard to read, an LLM re-explains the **same** answer clearly, right below it — while the transcript and Claude's context keep the original untouched.
 
-It's a small **Claude Code plugin** built on the official [`MessageDisplay`](https://code.claude.com/docs/en/hooks) hook. No binary patching, no proxy — display-only, so it can never change what Claude sees or does.
+![cc-gemini-rewrite — a slop answer, re-explained clearly below it](docs/demo-poster.png)
 
-```
-❯ why is my SQL query slow?
-⏺ Great question! …suboptimal performance at the data layer… industry-standard
-  optimizations… meaningful improvements in throughput and latency! 🚀
+A small **Claude Code plugin** on the official [`MessageDisplay`](https://code.claude.com/docs/en/hooks) hook. No binary patching, no proxy — display-only, so it can never change what Claude sees or does.
 
-  ────────────
-  [re-explained by Gemini]
-  Your query is slow because the DB reads unindexed data off disk, the planner
-  picks a bad plan, or repeat reads skip the cache.
-  Next: run EXPLAIN to see the plan and pin the bottleneck.
-```
+- **`/rewrite`** re-explains the previous answer on demand (or turn on auto for long answers).
+- **Transcript stays clean** — the rewrite is screen-only; `verbose` shows the original.
+- **Provider-agnostic** — any OpenAI-compatible endpoint (Gemini, OpenAI, OpenRouter, local).
+- **Faithful** — a deterministic check keeps every command, path, number, and code token; else it fails open to the original.
 
 ---
 
@@ -24,17 +19,15 @@ It's a small **Claude Code plugin** built on the official [`MessageDisplay`](htt
 
 ```
 Claude finishes a message
-        │  MessageDisplay hook fires (per chunk; final carries the whole message)
+        │  MessageDisplay hook fires (per chunk; the final one carries the whole message)
         ▼
-  buffer deltas → on final: policy decides → LLM rewrites the same content
-        │                                      → fidelity check (keep code/paths/numbers)
+  buffer the deltas → on final: policy decides → LLM rewrites the same content
+        │                                         → fidelity check (keep code/paths/numbers)
         ▼
-  displayContent = original + a re-explained block   (transcript keeps the original)
+  displayContent = original + a re-explained block      (the transcript keeps the original)
 ```
 
-- **Display-only.** The rewrite is shown on screen; the transcript and Claude's next request are unchanged. `verbose` shows the original.
-- **Block, not a live stream.** The hook returns once on the final chunk, so the rewrite appears as a block after a short pause (LLM latency), not token-by-token.
-- **Fail-open.** Any error, timeout (60s hook cap), or fidelity failure → the original text is shown unchanged.
+For `/rewrite`, the work runs **while the command's `Bash` step spins** (it precomputes and caches the rewrite), so the block then appears at once — no post-answer freeze. The rewrite is delivered as a block, not a live token stream: that's the one cost of using the official hook.
 
 ## Install
 
@@ -46,7 +39,7 @@ cd cc-gemini-rewrite
 ./install.sh     # copies the app, merges the hook into ~/.claude/settings.json, adds the commands
 ```
 
-Or install it as a plugin:
+Or as a plugin:
 
 ```
 /plugin marketplace add esc5221/cc-gemini-rewrite
@@ -55,16 +48,9 @@ Or install it as a plugin:
 
 Then set your provider (below), **start a new claude session**, and run `/rewrite-doctor`. Remove any time with `./uninstall.sh`.
 
-### Migrating from the binary-patch version
-
-The old version patched the Claude Code binary; this one doesn't — it's the official hook (preserved on the `binary-patch` branch). To switch:
-
-1. Restore the original `claude` — run the old `ccturn uninstall`, and delete any `alias claude=ccturn` from your shell rc.
-2. `./install.sh`.
-
 ## Configure the provider
 
-Any **OpenAI-compatible** endpoint. Put it in `~/.claude/cc-gemini-rewrite/config.json`:
+Any **OpenAI-compatible** endpoint, in `~/.claude/cc-gemini-rewrite/config.json`:
 
 ```json
 {
@@ -76,7 +62,7 @@ Any **OpenAI-compatible** endpoint. Put it in `~/.claude/cc-gemini-rewrite/confi
 }
 ```
 
-Key resolution order: `apiKey` (inline) → `apiKeyEnv` (env var) → `apiKeyKeychain` (macOS keychain). Or override per-shell with `CCR_BASE` / `CCR_MODEL` / `CCR_KEY`.
+Key order: `apiKey` (inline) → `apiKeyEnv` (env var) → `apiKeyKeychain` (macOS keychain). Per-shell override: `CCR_BASE` / `CCR_MODEL` / `CCR_KEY`.
 
 ## Usage
 
@@ -84,26 +70,25 @@ Default policy is **off** — nothing fires until you ask.
 
 ```
 /rewrite               re-explain the previous answer, inline
-/rewrite shorter       steer the rewrite (any hint: "in English", "like I'm five")
+/rewrite shorter       steer it (any hint: "in English", "like I'm five")
 ```
 
-Turn on automatic re-explaining (optional safety net):
+Turn on automatic re-explaining (optional):
 
 ```
-/rewrite-config policy lines    N+ line answers are always re-explained (no LLM gate)
-/rewrite-config policy judge    an LLM decides if the answer is unclear
-/rewrite-config policy off      back to manual-only (default)
-/rewrite-config off             pause the plugin entirely
-/rewrite-config                 show current settings
+/rewrite-config policy lines    N+ line answers are always re-explained (rule-based)
+/rewrite-config policy judge     an LLM decides if the answer is unclear
+/rewrite-config policy off       manual-only (default)   ·   /rewrite-config off   pause entirely
+/rewrite-config                  show current settings
+/rewrite-doctor                  version · hook · provider key · reachability
 ```
 
-Diagnose:
+### Migrating from the binary-patch version
 
-```
-/rewrite-doctor        version · hook · provider key · reachability
-```
+The old version patched the Claude Code binary; this one doesn't — it's the official hook (preserved on the `binary-patch` branch). To switch: run the old `ccturn uninstall`, delete any `alias claude=ccturn` from your shell rc, then `./install.sh`.
 
-## Config reference
+<details>
+<summary><strong>Config reference</strong></summary>
 
 ```
 provider.baseUrl / model / apiKey / apiKeyEnv / apiKeyKeychain / headers / reasoningEffort
@@ -114,16 +99,20 @@ minChars          skip auto-rewrite of answers shorter than this (default 200)
 fidelity.check / fidelity.repair   preserve code/paths/numbers; one repair pass, else fail-open
 ```
 
-## Structure
+</details>
+
+<details>
+<summary><strong>Structure</strong></summary>
 
 ```
-.claude-plugin/plugin.json   plugin manifest
-hooks/hooks.json             registers the MessageDisplay hook
-commands/                    /rewrite · /rewrite-config · /rewrite-doctor
-scripts/message-display.mjs  the hook entry (buffer → decide → rewrite → display)
+.claude-plugin/        plugin.json · marketplace.json
+hooks/hooks.json       registers the MessageDisplay hook
+commands/              /rewrite · /rewrite-config · /rewrite-doctor
+scripts/message-display.mjs   the hook (buffer → decide → rewrite → display)
 scripts/{rewrite,config-cli,doctor}.mjs
-core/                        provider · policy · fidelity · transcript · rewriter · display · buffer · state · requests · config · paths
-prompts/rewrite-ko.json      rewrite + judge prompts
-defaults/config.json         package defaults
-install.sh · uninstall.sh    one-command global install / removal
+core/                  provider · policy · fidelity · transcript · rewriter · display · buffer · state · requests · config · paths
+prompts/rewrite-ko.json · defaults/config.json
+install.sh · uninstall.sh
 ```
+
+</details>
