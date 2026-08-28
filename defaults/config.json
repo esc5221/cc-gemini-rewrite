@@ -15,9 +15,5 @@
   },
   "mode": "append",
   "enabled": true,
-  "minChars": 200,
-  "manual": {
-    "minChars": 120
-  },
   "timeoutMs": 45000
 }

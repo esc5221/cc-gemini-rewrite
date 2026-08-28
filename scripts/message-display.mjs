@@ -42,10 +42,9 @@ async function main() {
     if (req) {
       // rewrite.mjs already computed it (blocking) → render instantly.
       if (req.rewrite) { onlyBlock(cfg.prompts.header, req.rewrite); log({ mode: 'manual', cached: true }); clearBuffer(session, message); return; }
-      // fallback: compute now (arm couldn't reach the answer, or failed open)
-      const target = lastSubstantialAssistant(events, {
-        minChars: cfg.manual?.minChars ?? 120, skipId: message, skipContains: MARKER,
-      });
+      // fallback: compute now (arm couldn't reach the answer). Rewrite the last real answer,
+      // any length — only skip the carrier itself.
+      const target = lastSubstantialAssistant(events, { minChars: 1, skipId: message, skipContains: MARKER });
       if (!target) { onlyBlock('', '(no previous answer to re-explain)'); clearBuffer(session, message); return; }
       const chat = toChat(events);
       const ctx = { targetText: target.text, chat, lastUser: userQuestionBefore(events, target.index), note: req.note, maxTurns: cfg.prompts.maxTurns };
@@ -58,7 +57,7 @@ async function main() {
     // ===== auto policy =====
     if (cfg.enabled === false) { passthrough(delta); clearBuffer(session, message); return; }
     if (full.includes(MARKER)) { passthrough(delta); clearBuffer(session, message); return; }
-    if ((full || '').trim().length < (cfg.minChars ?? 200)) { passthrough(delta); clearBuffer(session, message); return; }
+    if (!(full || '').trim()) { passthrough(delta); clearBuffer(session, message); return; }
 
     const chat = toChat(events);
     const lastUser = [...chat].reverse().find(m => m.role === 'user')?.text || '';

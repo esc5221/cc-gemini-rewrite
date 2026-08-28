@@ -93,7 +93,6 @@ provider.baseUrl / model / apiKey / apiKeyEnv / apiKeyKeychain / headers / reaso
 policy.name       off | always | lines | judge | hybrid
 policy.alwaysLines (lines/hybrid 임계, 기본 8)   policy.judgeMinLines (기본 5)
 mode              append (원문+블록, 기본) | replace (블록만)
-minChars          이보다 짧은 답은 auto 재설명 스킵 (기본 200)
 ```
 
 </details>

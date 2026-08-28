@@ -15,7 +15,7 @@ const cwd = process.cwd();
   const cfg = loadConfig();
   const file = findSessionFile(cwd);
   const events = file ? loadTranscript(file) : [];
-  const target = lastSubstantialAssistant(events, { minChars: cfg.manual?.minChars ?? 120, skipContains: MARKER });
+  const target = lastSubstantialAssistant(events, { minChars: 1, skipContains: MARKER });
 
   if (!target) {
     armRequest(cwd, note);   // arm anyway; hook will report "no previous answer"

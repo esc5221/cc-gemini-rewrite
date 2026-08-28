@@ -93,7 +93,6 @@ provider.baseUrl / model / apiKey / apiKeyEnv / apiKeyKeychain / headers / reaso
 policy.name       off | always | lines | judge | hybrid
 policy.alwaysLines (lines/hybrid threshold, default 8)   policy.judgeMinLines (default 5)
 mode              append (original + block, default) | replace (block only)
-minChars          skip auto-rewrite of answers shorter than this (default 200)
 ```
 
 </details>
