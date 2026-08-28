@@ -38,29 +38,29 @@ Claude가 메시지를 끝냄
 
 ## 설치
 
-macOS/Linux, **Node ≥ 18**, `MessageDisplay` 지원 Claude Code(2.1.x+) 필요. 설치 후 `/rewrite-doctor`로 확인.
+macOS/Linux, **Node ≥ 18**, `MessageDisplay` 지원 Claude Code(2.1.x+) 필요.
 
-플러그인으로:
-
-```
+```bash
 git clone https://github.com/esc5221/cc-gemini-rewrite
-/plugin marketplace add <경로-또는-repo>
-/plugin install cc-gemini-rewrite
+cd cc-gemini-rewrite
+./install.sh     # 앱 복사 + ~/.claude/settings.json에 훅 병합 + 커맨드 등록
 ```
 
-또는 `~/.claude/settings.json`에 훅 직접 등록:
+또는 플러그인으로:
 
-```json
-{
-  "hooks": {
-    "MessageDisplay": [
-      { "hooks": [ { "type": "command", "command": "node /abs/path/cc-gemini-rewrite/scripts/message-display.mjs", "timeout": 60 } ] }
-    ]
-  }
-}
+```
+/plugin marketplace add esc5221/cc-gemini-rewrite
+/plugin install cc-gemini-rewrite@cc-gemini-rewrite
 ```
 
-그다음 provider 설정 후 `/rewrite-doctor`.
+그다음 provider 설정 후 **새 claude 세션을 켜고** `/rewrite-doctor`. 제거는 `./uninstall.sh`.
+
+### 구버전(바이너리 패치)에서 마이그레이션
+
+구버전은 Claude Code 바이너리를 패치했지만, 이건 안 한다 — 공식 훅이다 (구버전은 `binary-patch` 브랜치에 보존). 전환:
+
+1. 원본 `claude` 복원 — 옛 `ccturn uninstall` 실행, 셸 rc의 `alias claude=ccturn` 삭제.
+2. `./install.sh`.
 
 ## Provider 설정
 
@@ -121,4 +121,5 @@ scripts/{rewrite,config-cli,doctor}.mjs
 core/                        provider · policy · fidelity · transcript · rewriter · display · buffer · state · requests · config · paths
 prompts/rewrite-ko.json      재작성 + judge 프롬프트
 defaults/config.json         패키지 기본값
+install.sh · uninstall.sh    원커맨드 전역 설치 / 제거
 ```

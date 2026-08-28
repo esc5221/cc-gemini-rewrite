@@ -38,29 +38,29 @@ Claude finishes a message
 
 ## Install
 
-Requires macOS/Linux, **Node ≥ 18**, and a Claude Code build with `MessageDisplay` (2.1.x+). Check with `/rewrite-doctor` after setup.
+Requires macOS/Linux, **Node ≥ 18**, and a Claude Code build with `MessageDisplay` (2.1.x+).
 
-Clone, then register the hook + commands. As a plugin:
-
-```
+```bash
 git clone https://github.com/esc5221/cc-gemini-rewrite
-/plugin marketplace add <path-or-repo>
-/plugin install cc-gemini-rewrite
+cd cc-gemini-rewrite
+./install.sh     # copies the app, merges the hook into ~/.claude/settings.json, adds the commands
 ```
 
-Or wire the hook by hand in `~/.claude/settings.json`:
+Or install it as a plugin:
 
-```json
-{
-  "hooks": {
-    "MessageDisplay": [
-      { "hooks": [ { "type": "command", "command": "node /abs/path/cc-gemini-rewrite/scripts/message-display.mjs", "timeout": 60 } ] }
-    ]
-  }
-}
+```
+/plugin marketplace add esc5221/cc-gemini-rewrite
+/plugin install cc-gemini-rewrite@cc-gemini-rewrite
 ```
 
-Then set your provider (see below) and run `/rewrite-doctor`.
+Then set your provider (below), **start a new claude session**, and run `/rewrite-doctor`. Remove any time with `./uninstall.sh`.
+
+### Migrating from the binary-patch version
+
+The old version patched the Claude Code binary; this one doesn't — it's the official hook (preserved on the `binary-patch` branch). To switch:
+
+1. Restore the original `claude` — run the old `ccturn uninstall`, and delete any `alias claude=ccturn` from your shell rc.
+2. `./install.sh`.
 
 ## Configure the provider
 
@@ -125,4 +125,5 @@ scripts/{rewrite,config-cli,doctor}.mjs
 core/                        provider · policy · fidelity · transcript · rewriter · display · buffer · state · requests · config · paths
 prompts/rewrite-ko.json      rewrite + judge prompts
 defaults/config.json         package defaults
+install.sh · uninstall.sh    one-command global install / removal
 ```

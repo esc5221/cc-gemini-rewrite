@@ -1,0 +1,11 @@
+{
+  "name": "cc-gemini-rewrite",
+  "owner": { "name": "esc5221" },
+  "plugins": [
+    {
+      "name": "cc-gemini-rewrite",
+      "source": "./",
+      "description": "Re-explain hard Claude Code answers inline via the official MessageDisplay hook."
+    }
+  ]
+}
