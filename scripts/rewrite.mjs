@@ -34,14 +34,14 @@ const cwd = process.cwd();
   const to = setTimeout(() => ctrl.abort(), cfg.timeoutMs || 45000);
   try {
     rewrite = await rewriteText(ctx, cfg, ctrl.signal);
-    if (cfg.fidelity?.check && rewrite) {
-      let { ok, missing } = checkFidelity(ctx.targetText, rewrite);
-      if (!ok && cfg.fidelity?.repair) {
+    // fidelity: try one repair pass to pull back dropped tokens, but never suppress the
+    // rewrite — the original is always in the transcript.
+    if (cfg.fidelity?.check && cfg.fidelity?.repair && rewrite) {
+      const { ok, missing } = checkFidelity(ctx.targetText, rewrite);
+      if (!ok) {
         const fixed = await repairText(ctx, cfg, missing.slice(0, 12), ctrl.signal);
-        const re = checkFidelity(ctx.targetText, fixed);
-        if (re.ok || re.missing.length < missing.length) { rewrite = fixed; ({ ok, missing } = re); }
+        if (checkFidelity(ctx.targetText, fixed).missing.length < missing.length) rewrite = fixed;
       }
-      if (!ok) rewrite = '';   // fail-open: hook renders nothing, original stays
     }
   } catch { rewrite = ''; }
   finally { clearTimeout(to); }

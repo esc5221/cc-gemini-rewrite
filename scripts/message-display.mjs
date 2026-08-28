@@ -85,17 +85,16 @@ async function produce(ctx, cfg) {
   try {
     let text = await rewriteText(ctx, cfg, ctrl.signal);
     let fidelity = 'skipped';
-    if (cfg.fidelity?.check && ctx.targetText) {
-      let { ok, missing } = checkFidelity(ctx.targetText, text);
+    if (cfg.fidelity?.check && ctx.targetText && text) {
+      let { ok, missing, total } = checkFidelity(ctx.targetText, text);
       if (!ok && cfg.fidelity?.repair) {
         const fixed = await repairText(ctx, cfg, missing.slice(0, 12), ctrl.signal);
         const re = checkFidelity(ctx.targetText, fixed);
-        if (re.ok || re.missing.length < missing.length) { text = fixed; ({ ok, missing } = re); }
+        if (re.missing.length < missing.length) { text = fixed; ({ ok, missing, total } = re); }
       }
-      fidelity = ok ? 'ok' : `missing:${missing.length}`;
-      if (!ok) return { text: '', fidelity };   // fail-open when still broken
+      fidelity = `${total - missing.length}/${total}`;   // logged only — never suppress the rewrite
     }
-    return { text, fidelity };
+    return { text, fidelity };   // '' only if the provider returned nothing
   } finally { clearTimeout(to); }
 }
 main();

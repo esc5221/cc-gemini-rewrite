@@ -1,5 +1,7 @@
-// Cheap, deterministic invariant preservation check between original and rewrite.
-// Not a semantic proof — a high-signal guard. Returns { ok, missing }.
+// Cheap, deterministic invariant check between original and rewrite.
+// A re-explanation condenses, and the original is always kept in the transcript — so this
+// is a loose guard against off-topic / hallucinated rewrites, NOT exact preservation.
+// Returns { ok, missing, total }.
 const RX = {
   fence:   /```[\s\S]*?```/g,
   inline:  /`[^`\n]+`/g,
@@ -7,8 +9,6 @@ const RX = {
   flag:    /(?<![\w-])--?[A-Za-z][\w-]*/g,
   url:     /https?:\/\/[^\s)]+/g,
   version: /\bv?\d+\.\d+(?:\.\d+)?\b/g,
-  num:     /\b\d[\d,]*(?:\.\d+)?\s?(?:ms|s|kb|mb|gb|%|px|x)?\b/gi,
-  ident:   /\b[A-Z][A-Z0-9_]{3,}\b|\b[a-z]+(?:[A-Z][a-z0-9]+){1,}\b/g,
   port:    /:\d{2,5}\b/g,
 };
 const norm = (s) => (s || '').replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/\s+/g, ' ');
@@ -19,14 +19,12 @@ function tokens(text, kinds) {
 }
 export function checkFidelity(original, rewrite, opts = {}) {
   const kinds = opts.kinds || ['fence', 'inline', 'path', 'flag', 'url', 'version', 'port'];
-  const orig = tokens(original, kinds);
+  const orig = [...tokens(original, kinds)].filter(t => t.length >= 2);
   const rw = norm(rewrite);
-  const missing = [];
-  for (const tok of orig) {
-    if (tok.length < 2) continue;
-    if (!rw.includes(norm(tok))) missing.push(tok);
-  }
-  // allow a small tolerance for very token-dense originals
-  const tol = opts.tolerance ?? 0;
-  return { ok: missing.length <= tol, missing };
+  const missing = orig.filter(tok => !rw.includes(norm(tok)));
+  const total = orig.length;
+  // Reject only when a large fraction of critical tokens is gone (rewrite went off the rails).
+  const ratio = opts.ratio ?? 0.5;
+  const allow = Math.max(opts.tolerance ?? 2, Math.floor(total * ratio));
+  return { ok: missing.length <= allow, missing, total };
 }
