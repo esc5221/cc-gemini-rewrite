@@ -2,11 +2,11 @@
 
 # cc-gemini-rewrite
 
-When a Claude Code answer is hard to read, an LLM rewrites it into a clearer version and shows that below the original — on screen only. Claude's context and the JSONL transcript still hold the original.
+**Claude Code's technical answers are often hard to read** — the conclusion buried, no clear next step.
 
 ![cc-gemini-rewrite — a slop answer, re-explained clearly below it](docs/demo-poster.png)
 
-A Claude Code plugin built on the [`MessageDisplay`](https://code.claude.com/docs/en/hooks) hook, which only changes how an assistant message is drawn on screen. It can't alter the message, so it can't change what Claude does.
+**cc-gemini-rewrite** adds a clearer rewrite right below the answer, on screen. It's a Claude Code plugin on the [`MessageDisplay`](https://code.claude.com/docs/en/hooks) hook, which only changes how a message is drawn — it can't alter the message, so it can't change what Claude does.
 
 - **`/rewrite`** rewrites the previous answer on demand; an optional policy rewrites long answers automatically.
 - The rewrite is shown, not saved — `verbose` and the transcript still show the original.
@@ -61,11 +61,12 @@ Default policy is **off** — nothing fires until you ask.
 Turn on automatic re-explaining (optional):
 
 ```
-/rewrite-config policy lines    N+ line answers are always re-explained (rule-based)
-/rewrite-config policy judge     an LLM decides if the answer is unclear
-/rewrite-config policy off       manual-only (default)   ·   /rewrite-config off   pause entirely
-/rewrite-config                  show current settings
-/rewrite-doctor                  version · hook · provider key · reachability
+/rewrite-config policy lines    auto-rewrite answers of 8+ lines
+/rewrite-config policy judge    let an LLM decide when to auto-rewrite
+/rewrite-config policy off      no auto-rewrite; /rewrite only (default)
+/rewrite-config off             turn the whole plugin off
+/rewrite-config                 show current settings
+/rewrite-doctor                 version · hook · provider key · reachability
 ```
 
 ## How it works
