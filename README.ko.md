@@ -21,7 +21,7 @@ macOS/Linux, **Node ≥ 18**, `MessageDisplay` 지원 Claude Code(2.1.x+) 필요
 ```bash
 git clone https://github.com/esc5221/cc-gemini-rewrite
 cd cc-gemini-rewrite
-./install.sh     # 앱 복사 + ~/.claude/settings.json에 훅 병합 + 커맨드 등록
+./install.sh     # 앱 + 훅 + 커맨드
 ```
 
 또는 플러그인으로:
@@ -41,7 +41,7 @@ cd cc-gemini-rewrite
 {
   "provider": {
     "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai",
-    "model": "gemini-2.5-flash",
+    "model": "gemini-3.5-flash-lite",
     "apiKeyEnv": "GEMINI_API_KEY"
   }
 }
@@ -80,10 +80,6 @@ Claude가 메시지를 끝냄
 ```
 
 `/rewrite`는 커맨드의 `Bash` 단계가 도는 동안 재작성을 미리 계산·캐시하므로, 답변이 찍히는 시점에 블록이 바로 나온다. 스트리밍이 아니라 한 번에 나오는데, 훅이 출력을 한 번만 반환하기 때문이다.
-
-### 구버전(바이너리 패치)에서 마이그레이션
-
-구버전은 Claude Code 바이너리를 패치했지만, 이건 안 한다 — 공식 훅이다 (구버전은 `binary-patch` 브랜치에 보존). 전환: 옛 `ccturn uninstall` 실행 → 셸 rc의 `alias claude=ccturn` 삭제 → `./install.sh`.
 
 <details>
 <summary><strong>설정 레퍼런스</strong></summary>

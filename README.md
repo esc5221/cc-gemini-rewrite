@@ -21,7 +21,7 @@ Requires macOS/Linux, **Node ≥ 18**, and a Claude Code build with `MessageDisp
 ```bash
 git clone https://github.com/esc5221/cc-gemini-rewrite
 cd cc-gemini-rewrite
-./install.sh     # copies the app, merges the hook into ~/.claude/settings.json, adds the commands
+./install.sh     # app + hook + commands
 ```
 
 Or as a plugin:
@@ -41,7 +41,7 @@ Any **OpenAI-compatible** endpoint, in `~/.claude/cc-gemini-rewrite/config.json`
 {
   "provider": {
     "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai",
-    "model": "gemini-2.5-flash",
+    "model": "gemini-3.5-flash-lite",
     "apiKeyEnv": "GEMINI_API_KEY"
   }
 }
@@ -80,10 +80,6 @@ Claude finishes a message
 ```
 
 For `/rewrite`, the rewrite is computed while the command's `Bash` step runs (it precomputes and caches it), so the block appears as soon as the answer prints. It comes all at once rather than streaming in, because the hook returns its output once.
-
-### Migrating from the binary-patch version
-
-The old version patched the Claude Code binary; this one doesn't — it's the official hook (preserved on the `binary-patch` branch). To switch: run the old `ccturn uninstall`, delete any `alias claude=ccturn` from your shell rc, then `./install.sh`.
 
 <details>
 <summary><strong>Config reference</strong></summary>
