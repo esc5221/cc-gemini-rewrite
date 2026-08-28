@@ -11,23 +11,8 @@ Claude Code 답변이 어려우면, LLM이 **같은 답을** 이해되게 다시
 - **`/rewrite`** — 직전 답을 즉석에서 재설명 (긴 답은 자동으로도 켤 수 있음).
 - **transcript 유지** — 재작성은 화면에만. `verbose`로 원문 확인.
 - **provider 무관** — OpenAI 호환이면 다 됨 (Gemini, OpenAI, OpenRouter, 로컬).
-- **충실도** — 명령·경로·숫자·코드 토큰을 결정론적으로 보존. 실패하면 원문으로 fail-open.
 
 ---
-
-## 동작
-
-```
-Claude가 메시지를 끝냄
-        │  MessageDisplay 훅 발동 (chunk마다; final이 전체 메시지를 실음)
-        ▼
-  delta 버퍼링 → final에 정책 판단 → LLM이 같은 내용을 재작성
-        │                              → fidelity 검사 (코드/경로/숫자 보존)
-        ▼
-  displayContent = 원문 + 재설명 블록      (transcript엔 원문 유지)
-```
-
-`/rewrite`는 **커맨드의 `Bash` 단계가 도는 동안** 재작성을 미리 계산·캐시해서, 블록이 한 번에 딱 뜬다 — 답변 뒤 프리즈 없음. 재작성은 라이브 토큰 스트리밍이 아니라 블록으로 등장하는데, 그게 공식 훅을 쓰는 유일한 대가다.
 
 ## 설치
 
@@ -82,6 +67,20 @@ cd cc-gemini-rewrite
 /rewrite-config                  현재 설정 보기
 /rewrite-doctor                  버전 · 훅 · provider 키 · 연결성
 ```
+
+## 동작
+
+```
+Claude가 메시지를 끝냄
+        │  MessageDisplay 훅 발동 (chunk마다; final이 전체 메시지를 실음)
+        ▼
+  delta 버퍼링 → final에 정책 판단 → LLM이 같은 내용을 재작성
+        │                              → fidelity 검사 (코드/경로/숫자 보존)
+        ▼
+  displayContent = 원문 + 재설명 블록      (transcript엔 원문 유지)
+```
+
+결정론적 fidelity 검사가 명령·경로·숫자·코드 토큰을 보존하고, 못 하면 원문으로 fail-open 한다. `/rewrite`는 **커맨드의 `Bash` 단계가 도는 동안** 재작성을 미리 계산·캐시해서 블록이 한 번에 딱 뜬다 — 답변 뒤 프리즈 없음. 재작성은 라이브 토큰 스트리밍이 아니라 블록으로 등장하는데, 그게 공식 훅을 쓰는 유일한 대가다.
 
 ### 구버전(바이너리 패치)에서 마이그레이션
 

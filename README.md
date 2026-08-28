@@ -11,23 +11,8 @@ A small **Claude Code plugin** on the official [`MessageDisplay`](https://code.c
 - **`/rewrite`** re-explains the previous answer on demand (or turn on auto for long answers).
 - **Transcript stays clean** — the rewrite is screen-only; `verbose` shows the original.
 - **Provider-agnostic** — any OpenAI-compatible endpoint (Gemini, OpenAI, OpenRouter, local).
-- **Faithful** — a deterministic check keeps every command, path, number, and code token; else it fails open to the original.
 
 ---
-
-## How it works
-
-```
-Claude finishes a message
-        │  MessageDisplay hook fires (per chunk; the final one carries the whole message)
-        ▼
-  buffer the deltas → on final: policy decides → LLM rewrites the same content
-        │                                         → fidelity check (keep code/paths/numbers)
-        ▼
-  displayContent = original + a re-explained block      (the transcript keeps the original)
-```
-
-For `/rewrite`, the work runs **while the command's `Bash` step spins** (it precomputes and caches the rewrite), so the block then appears at once — no post-answer freeze. The rewrite is delivered as a block, not a live token stream: that's the one cost of using the official hook.
 
 ## Install
 
@@ -82,6 +67,20 @@ Turn on automatic re-explaining (optional):
 /rewrite-config                  show current settings
 /rewrite-doctor                  version · hook · provider key · reachability
 ```
+
+## How it works
+
+```
+Claude finishes a message
+        │  MessageDisplay hook fires (per chunk; the final one carries the whole message)
+        ▼
+  buffer the deltas → on final: policy decides → LLM rewrites the same content
+        │                                         → fidelity check (keep code/paths/numbers)
+        ▼
+  displayContent = original + a re-explained block      (the transcript keeps the original)
+```
+
+A deterministic fidelity check keeps every command, path, number, and code token; if it can't, it fails open to the original. For `/rewrite`, the work runs **while the command's `Bash` step spins** (it precomputes and caches the rewrite), so the block then appears at once — no post-answer freeze. The rewrite is delivered as a block, not a live token stream: that's the one cost of using the official hook.
 
 ### Migrating from the binary-patch version
 
