@@ -8,11 +8,16 @@
     "headers": {},
     "reasoningEffort": "low"
   },
-  "policy": { "name": "off", "alwaysLines": 8, "judgeMinLines": 5 },
+  "policy": {
+    "name": "off",
+    "alwaysLines": 8,
+    "judgeMinLines": 5
+  },
   "mode": "append",
   "enabled": true,
   "minChars": 200,
-  "manual": { "minChars": 120 },
-  "timeoutMs": 45000,
-  "fidelity": { "check": true, "repair": true }
+  "manual": {
+    "minChars": 120
+  },
+  "timeoutMs": 45000
 }

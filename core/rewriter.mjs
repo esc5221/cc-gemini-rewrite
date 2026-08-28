@@ -16,13 +16,3 @@ export async function rewriteText(ctx, cfg, signal) {
     { role: 'user', content: userMsg(ctx) },
   ], { model: cfg.provider.model, temperature: 0.4, reasoningEffort: cfg.provider.reasoningEffort, signal })).trim();
 }
-// One targeted repair pass when fidelity flags missing tokens.
-export async function repairText(ctx, cfg, missing, signal) {
-  const ctxBlock = `Rewrite the following Claude answer so it is understandable:\n\n${ctx.targetText}`;
-  const fix = `You dropped required technical tokens. Rewrite AGAIN and include EVERY one of these verbatim: ${missing.map(m => '`'+m+'`').join(', ')}. Keep it in the conversation's language.`;
-  return (await chat([
-    { role: 'system', content: cfg.prompts.respondPrompt },
-    { role: 'user', content: ctxBlock },
-    { role: 'user', content: fix },
-  ], { model: cfg.provider.model, temperature: 0.3, reasoningEffort: cfg.provider.reasoningEffort, signal })).trim();
-}

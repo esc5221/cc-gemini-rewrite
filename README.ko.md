@@ -75,12 +75,11 @@ Claude가 메시지를 끝냄
         │  MessageDisplay 훅 발동 (chunk마다; final이 전체 메시지를 실음)
         ▼
   delta 버퍼링 → final에 정책 판단 → LLM이 같은 내용을 재작성
-        │                              → fidelity 검사 (코드/경로/숫자 보존)
         ▼
   displayContent = 원문 + 재설명 블록      (transcript엔 원문 유지)
 ```
 
-결정론적 fidelity 검사가 명령·경로·숫자·코드 토큰을 보존하고, 못 하면 원문으로 fail-open 한다. `/rewrite`는 **커맨드의 `Bash` 단계가 도는 동안** 재작성을 미리 계산·캐시해서 블록이 한 번에 딱 뜬다 — 답변 뒤 프리즈 없음. 재작성은 라이브 토큰 스트리밍이 아니라 블록으로 등장하는데, 그게 공식 훅을 쓰는 유일한 대가다.
+`/rewrite`는 **커맨드의 `Bash` 단계가 도는 동안** 재작성을 미리 계산·캐시해서 블록이 한 번에 딱 뜬다 — 답변 뒤 프리즈 없음. 재작성은 라이브 토큰 스트리밍이 아니라 블록으로 등장하는데, 그게 공식 훅을 쓰는 유일한 대가다.
 
 ### 구버전(바이너리 패치)에서 마이그레이션
 
@@ -95,7 +94,6 @@ policy.name       off | always | lines | judge | hybrid
 policy.alwaysLines (lines/hybrid 임계, 기본 8)   policy.judgeMinLines (기본 5)
 mode              append (원문+블록, 기본) | replace (블록만)
 minChars          이보다 짧은 답은 auto 재설명 스킵 (기본 200)
-fidelity.check / fidelity.repair   코드/경로/숫자 보존; repair 1회, 그래도 실패면 fail-open
 ```
 
 </details>
@@ -109,7 +107,7 @@ hooks/hooks.json       MessageDisplay 훅 등록
 commands/              /rewrite · /rewrite-config · /rewrite-doctor
 scripts/message-display.mjs   훅 (buffer → decide → rewrite → display)
 scripts/{rewrite,config-cli,doctor}.mjs
-core/                  provider · policy · fidelity · transcript · rewriter · display · buffer · state · requests · config · paths
+core/                  provider · policy · transcript · rewriter · display · buffer · state · requests · config · paths
 prompts/rewrite-ko.json · defaults/config.json
 install.sh · uninstall.sh
 ```

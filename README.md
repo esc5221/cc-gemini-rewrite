@@ -75,12 +75,11 @@ Claude finishes a message
         │  MessageDisplay hook fires (per chunk; the final one carries the whole message)
         ▼
   buffer the deltas → on final: policy decides → LLM rewrites the same content
-        │                                         → fidelity check (keep code/paths/numbers)
         ▼
   displayContent = original + a re-explained block      (the transcript keeps the original)
 ```
 
-A deterministic fidelity check keeps every command, path, number, and code token; if it can't, it fails open to the original. For `/rewrite`, the work runs **while the command's `Bash` step spins** (it precomputes and caches the rewrite), so the block then appears at once — no post-answer freeze. The rewrite is delivered as a block, not a live token stream: that's the one cost of using the official hook.
+For `/rewrite`, the work runs **while the command's `Bash` step spins** (it precomputes and caches the rewrite), so the block then appears at once — no post-answer freeze. The rewrite is delivered as a block, not a live token stream: that's the one cost of using the official hook.
 
 ### Migrating from the binary-patch version
 
@@ -95,7 +94,6 @@ policy.name       off | always | lines | judge | hybrid
 policy.alwaysLines (lines/hybrid threshold, default 8)   policy.judgeMinLines (default 5)
 mode              append (original + block, default) | replace (block only)
 minChars          skip auto-rewrite of answers shorter than this (default 200)
-fidelity.check / fidelity.repair   preserve code/paths/numbers; one repair pass, else fail-open
 ```
 
 </details>
@@ -109,7 +107,7 @@ hooks/hooks.json       registers the MessageDisplay hook
 commands/              /rewrite · /rewrite-config · /rewrite-doctor
 scripts/message-display.mjs   the hook (buffer → decide → rewrite → display)
 scripts/{rewrite,config-cli,doctor}.mjs
-core/                  provider · policy · fidelity · transcript · rewriter · display · buffer · state · requests · config · paths
+core/                  provider · policy · transcript · rewriter · display · buffer · state · requests · config · paths
 prompts/rewrite-ko.json · defaults/config.json
 install.sh · uninstall.sh
 ```

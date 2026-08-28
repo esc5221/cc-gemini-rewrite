@@ -1,13 +1,12 @@
 #!/usr/bin/env node
 // MessageDisplay hook. Non-final: buffer + passthrough. Final: policy-gate the whole
-// message, rewrite via provider, fidelity-check, and append the block. Fail-open.
+// message, rewrite via the provider, and append the block. Fail-open (original on error).
 import { loadConfig } from '../core/config.mjs';
 import { ensureHome, P } from '../core/paths.mjs';
 import { appendDelta, readBuffer, clearBuffer, sweep } from '../core/buffer.mjs';
 import { loadTranscript, toChat, lastSubstantialAssistant, userQuestionBefore } from '../core/transcript.mjs';
 import { decide } from '../core/policy.mjs';
-import { rewriteText, repairText } from '../core/rewriter.mjs';
-import { checkFidelity } from '../core/fidelity.mjs';
+import { rewriteText } from '../core/rewriter.mjs';
 import { emit, passthrough, appendBlock, onlyBlock } from '../core/display.mjs';
 import { takeRequest } from '../core/requests.mjs';
 import { appendFileSync } from 'node:fs';
@@ -52,7 +51,7 @@ async function main() {
       const ctx = { targetText: target.text, chat, lastUser: userQuestionBefore(events, target.index), note: req.note, maxTurns: cfg.prompts.maxTurns };
       const rw = await produce(ctx, cfg);
       onlyBlock(cfg.prompts.header, rw.text || '(re-explain unavailable — original stands)');
-      log({ mode: 'manual', fired: true, fidelity: rw.fidelity, len: target.text.length });
+      log({ mode: 'manual', fired: true, len: target.text.length });
       clearBuffer(session, message); return;
     }
 
@@ -70,7 +69,7 @@ async function main() {
     const rw = await produce(ctx, cfg);
     if (!rw.text) { passthrough(delta); clearBuffer(session, message); return; }
     appendBlock(delta, cfg.prompts.header, rw.text);
-    log({ mode: 'auto', fired: true, reason: d.reason, policy: d.policy, fidelity: rw.fidelity });
+    log({ mode: 'auto', fired: true, reason: d.reason, policy: d.policy });
     clearBuffer(session, message);
   } catch (e) {
     log({ error: String(e && e.message || e) });
@@ -82,19 +81,7 @@ async function main() {
 async function produce(ctx, cfg) {
   const ctrl = new AbortController();
   const to = setTimeout(() => ctrl.abort(), cfg.timeoutMs || 45000);
-  try {
-    let text = await rewriteText(ctx, cfg, ctrl.signal);
-    let fidelity = 'skipped';
-    if (cfg.fidelity?.check && ctx.targetText && text) {
-      let { ok, missing, total } = checkFidelity(ctx.targetText, text);
-      if (!ok && cfg.fidelity?.repair) {
-        const fixed = await repairText(ctx, cfg, missing.slice(0, 12), ctrl.signal);
-        const re = checkFidelity(ctx.targetText, fixed);
-        if (re.missing.length < missing.length) { text = fixed; ({ ok, missing, total } = re); }
-      }
-      fidelity = `${total - missing.length}/${total}`;   // logged only — never suppress the rewrite
-    }
-    return { text, fidelity };   // '' only if the provider returned nothing
-  } finally { clearTimeout(to); }
+  try { return { text: await rewriteText(ctx, cfg, ctrl.signal) }; }   // '' only if provider returned nothing
+  finally { clearTimeout(to); }
 }
 main();
