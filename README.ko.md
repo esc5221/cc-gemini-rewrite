@@ -2,15 +2,15 @@
 
 # cc-gemini-rewrite
 
-Claude Code 답변이 어려우면, LLM이 **같은 답을** 이해되게 다시 써서 바로 아래에 붙인다 — transcript와 Claude의 컨텍스트에는 원문이 그대로 남는다.
+Claude Code 답변이 어려우면, LLM이 더 읽기 쉬운 버전으로 다시 써서 원문 아래에 — 화면에만 — 보여준다. Claude의 컨텍스트와 JSONL transcript에는 원문이 그대로 남는다.
 
 ![cc-gemini-rewrite — slop 답변을 바로 아래 깔끔하게 재설명](docs/demo-poster.png)
 
-공식 [`MessageDisplay`](https://code.claude.com/docs/en/hooks) 훅 위에 얹은 작은 **Claude Code 플러그인**. 바이너리 패치도, 프록시도 없다. display 전용이라 Claude가 보는 것/하는 것을 절대 바꾸지 않는다.
+[`MessageDisplay`](https://code.claude.com/docs/en/hooks) 훅 위에 얹은 Claude Code 플러그인. 이 훅은 assistant 메시지가 화면에 그려지는 방식만 바꾼다. 메시지 자체는 못 건드리므로 Claude가 하는 일도 못 바꾼다.
 
-- **`/rewrite`** — 직전 답을 즉석에서 재설명 (긴 답은 자동으로도 켤 수 있음).
-- **transcript 유지** — 재작성은 화면에만. `verbose`로 원문 확인.
-- **provider 무관** — OpenAI 호환이면 다 됨 (Gemini, OpenAI, OpenRouter, 로컬).
+- **`/rewrite`** — 직전 답을 즉석에서 다시 쓴다; 정책을 켜면 긴 답은 자동으로도.
+- 재작성은 화면에만 보이고 저장은 안 된다 — `verbose`와 transcript에는 원문이 남는다.
+- OpenAI 호환 엔드포인트면 다 된다 (Gemini, OpenAI, OpenRouter, 로컬 모델).
 
 ---
 
@@ -79,7 +79,7 @@ Claude가 메시지를 끝냄
   displayContent = 원문 + 재설명 블록      (transcript엔 원문 유지)
 ```
 
-`/rewrite`는 **커맨드의 `Bash` 단계가 도는 동안** 재작성을 미리 계산·캐시해서 블록이 한 번에 딱 뜬다 — 답변 뒤 프리즈 없음. 재작성은 라이브 토큰 스트리밍이 아니라 블록으로 등장하는데, 그게 공식 훅을 쓰는 유일한 대가다.
+`/rewrite`는 커맨드의 `Bash` 단계가 도는 동안 재작성을 미리 계산·캐시하므로, 답변이 찍히는 시점에 블록이 바로 나온다. 스트리밍이 아니라 한 번에 나오는데, 훅이 출력을 한 번만 반환하기 때문이다.
 
 ### 구버전(바이너리 패치)에서 마이그레이션
 

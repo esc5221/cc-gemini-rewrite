@@ -2,15 +2,15 @@
 
 # cc-gemini-rewrite
 
-When a Claude Code answer is hard to read, an LLM re-explains the **same** answer clearly, right below it — while the transcript and Claude's context keep the original untouched.
+When a Claude Code answer is hard to read, an LLM rewrites it into a clearer version and shows that below the original — on screen only. Claude's context and the JSONL transcript still hold the original.
 
 ![cc-gemini-rewrite — a slop answer, re-explained clearly below it](docs/demo-poster.png)
 
-A small **Claude Code plugin** on the official [`MessageDisplay`](https://code.claude.com/docs/en/hooks) hook. No binary patching, no proxy — display-only, so it can never change what Claude sees or does.
+A Claude Code plugin built on the [`MessageDisplay`](https://code.claude.com/docs/en/hooks) hook, which only changes how an assistant message is drawn on screen. It can't alter the message, so it can't change what Claude does.
 
-- **`/rewrite`** re-explains the previous answer on demand (or turn on auto for long answers).
-- **Transcript stays clean** — the rewrite is screen-only; `verbose` shows the original.
-- **Provider-agnostic** — any OpenAI-compatible endpoint (Gemini, OpenAI, OpenRouter, local).
+- **`/rewrite`** rewrites the previous answer on demand; an optional policy rewrites long answers automatically.
+- The rewrite is shown, not saved — `verbose` and the transcript still show the original.
+- Works with any OpenAI-compatible endpoint (Gemini, OpenAI, OpenRouter, a local model).
 
 ---
 
@@ -79,7 +79,7 @@ Claude finishes a message
   displayContent = original + a re-explained block      (the transcript keeps the original)
 ```
 
-For `/rewrite`, the work runs **while the command's `Bash` step spins** (it precomputes and caches the rewrite), so the block then appears at once — no post-answer freeze. The rewrite is delivered as a block, not a live token stream: that's the one cost of using the official hook.
+For `/rewrite`, the rewrite is computed while the command's `Bash` step runs (it precomputes and caches it), so the block appears as soon as the answer prints. It comes all at once rather than streaming in, because the hook returns its output once.
 
 ### Migrating from the binary-patch version
 
