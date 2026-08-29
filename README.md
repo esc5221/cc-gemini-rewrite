@@ -4,7 +4,7 @@
 
 **Claude Code's technical answers are often hard to read** — the conclusion buried, no clear next step.
 
-![cc-gemini-rewrite — a slop answer, re-explained clearly below it](docs/demo-poster.png)
+![cc-gemini-rewrite — original answer on the left, the /rewrite result on the right](docs/before-after.png)
 
 **cc-gemini-rewrite** adds a clearer rewrite right below the answer, on screen. It's a Claude Code plugin on the [`MessageDisplay`](https://code.claude.com/docs/en/hooks) hook, which only changes how a message is drawn — it can't alter the message, so it can't change what Claude does.
 

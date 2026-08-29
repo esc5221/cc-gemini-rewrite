@@ -4,7 +4,7 @@
 
 **Claude Code의 기술 답변은 자주 읽기 어렵다** — 결론이 묻히고, 다음에 뭘 할지 안 보인다.
 
-![cc-gemini-rewrite — slop 답변을 바로 아래 깔끔하게 재설명](docs/demo-poster.png)
+![cc-gemini-rewrite — 왼쪽 원문, 오른쪽 /rewrite 결과](docs/before-after.png)
 
 **cc-gemini-rewrite**는 그 답 바로 아래에 더 읽기 쉬운 재작성을 화면에 붙인다. [`MessageDisplay`](https://code.claude.com/docs/en/hooks) 훅 위에 얹은 Claude Code 플러그인으로, 이 훅은 메시지가 화면에 그려지는 방식만 바꾼다. 메시지 자체는 못 건드리므로 Claude가 하는 일도 못 바꾼다.
 
