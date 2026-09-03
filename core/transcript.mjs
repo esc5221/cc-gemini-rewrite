@@ -1,20 +1,20 @@
 // Read a Claude Code transcript jsonl and expose chat view + walk-back helpers.
-import { readFileSync, readdirSync, statSync, realpathSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 
-// cwd -> newest session jsonl in ~/.claude/projects/<encoded cwd>. Used by rewrite.mjs
-// to precompute the rewrite (the hook gets transcript_path directly).
-export function findSessionFile(cwd) {
-  let real = cwd; try { real = realpathSync(cwd); } catch {}
-  const dir = join(homedir(), '.claude', 'projects', real.replace(/[/.]/g, '-'));
-  let files; try { files = readdirSync(dir); } catch { return null; }
-  let best = null, bestM = -1;
-  for (const f of files) {
-    if (!f.endsWith('.jsonl') || f.startsWith('agent-')) continue;
-    const fp = join(dir, f); try { const m = statSync(fp).mtimeMs; if (m > bestM) { bestM = m; best = fp; } } catch {}
+// Resolve the transcript by session id. Session ids are globally unique, so nothing is guessed.
+// (The old path picked the newest-mtime jsonl in the cwd project folder; with several sessions
+//  in one folder it grabbed another session's transcript — 90 measured misses. Now dropped.)
+export function sessionFileById(sessionId) {
+  if (!sessionId) return null;
+  const root = join(homedir(), '.claude', 'projects');
+  let dirs; try { dirs = readdirSync(root); } catch { return null; }
+  for (const d of dirs) {
+    const p = join(root, d, `${sessionId}.jsonl`);
+    try { if (statSync(p).isFile()) return p; } catch {}
   }
-  return best;
+  return null;
 }
 
 export function loadTranscript(path) {
@@ -39,22 +39,32 @@ export function toChat(events) {
   }
   return view;
 }
-// Last assistant text with length >= minChars, optionally skipping a message id / marker.
-export function lastSubstantialAssistant(events, { minChars = 200, skipId = null, skipContains = null } = {}) {
+// Pick what to re-explain.
+//
+// A fixed length threshold does not work. The answers wrongly picked in practice were
+// 22/43/71/78/132 chars while the real ones were 2,904-13,568 — and a legitimate 180-char
+// answer sits between them. Any fixed line gets one side wrong. So choose by ratio against
+// the longest candidate in the recent window: in a session where every answer is short the
+// ratios are all near 1, so the most recent one wins on its own.
+const MIN_ABS = 40;      // below this there is nothing to re-explain
+const MIN_RATIO = 0.25;  // under a quarter of the window's longest = an aside, not the answer
+
+export function lastSubstantialAssistant(events, { skipId = null, skipContains = null, maxLookback = 8 } = {}) {
   const chat = toChat(events);
-  for (let i = chat.length - 1; i >= 0; i--) {
-    const m = chat[i]; if (m.role !== 'assistant') continue;
-    if (skipId && m.id === skipId) continue;
-    if (skipContains && m.text.includes(skipContains)) continue;
-    if ((m.text || '').trim().length >= minChars) return { text: m.text, index: i, id: m.id };
+  const skip = (m) => (skipId && m.id === skipId) || (skipContains && m.text.includes(skipContains));
+
+  const window = [];
+  for (let i = chat.length - 1; i >= 0 && window.length < maxLookback; i--) {
+    const m = chat[i];
+    if (m.role !== 'assistant' || skip(m) || !(m.text || '').trim()) continue;
+    window.push({ text: m.text, index: i, id: m.id, len: m.text.trim().length });
   }
-  // fallback: last assistant of any length (still skipping)
-  for (let i = chat.length - 1; i >= 0; i--) {
-    const m = chat[i]; if (m.role !== 'assistant') continue;
-    if (skipContains && m.text.includes(skipContains)) continue;
-    if ((m.text || '').trim()) return { text: m.text, index: i, id: m.id };
-  }
-  return null;
+  if (!window.length) return null;
+
+  const max = Math.max(...window.map((w) => w.len));
+  const floor = Math.max(MIN_ABS, max * MIN_RATIO);
+  for (const w of window) if (w.len >= floor) return { text: w.text, index: w.index, id: w.id };
+  return { text: window[0].text, index: window[0].index, id: window[0].id };   // unreachable: the longest always passes
 }
 export function userQuestionBefore(events, index) {
   const chat = toChat(events);

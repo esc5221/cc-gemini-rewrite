@@ -28,8 +28,9 @@ async function main() {
 
   try {
     appendDelta(session, message, delta);
-    // A pending manual /rewrite for this cwd? (carrier turn) — suppress its text.
-    const req = takeRequest(ev.cwd, { peek: !final });
+    // A pending manual /rewrite for THIS session? (carrier turn) — suppress its text.
+    // Keyed by session id; the old cwd key picked up requests from other sessions in the same folder.
+    const req = takeRequest(session, { peek: !final });
     if (!final) { req ? emit('') : passthrough(delta); return; }
 
     // ---------- final ----------
@@ -42,9 +43,9 @@ async function main() {
     if (req) {
       // rewrite.mjs already computed it (blocking) → render instantly.
       if (req.rewrite) { onlyBlock(cfg.prompts.header, req.rewrite); log({ mode: 'manual', cached: true }); clearBuffer(session, message); return; }
-      // fallback: compute now (arm couldn't reach the answer). Rewrite the last real answer,
-      // any length — only skip the carrier itself.
-      const target = lastSubstantialAssistant(events, { minChars: 1, skipId: message, skipContains: MARKER });
+      // fallback: compute now (arm couldn't reach the answer). Selection rules live in
+      // transcript.mjs so the carrier line and short asides are not picked as the target.
+      const target = lastSubstantialAssistant(events, { skipId: message, skipContains: MARKER });
       if (!target) { onlyBlock('', '(no previous answer to re-explain)'); clearBuffer(session, message); return; }
       const chat = toChat(events);
       const ctx = { targetText: target.text, chat, lastUser: userQuestionBefore(events, target.index), note: req.note, maxTurns: cfg.prompts.maxTurns };
